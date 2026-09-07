@@ -1,0 +1,6 @@
+window.ALTITUDE_CONFIG = {
+  SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',
+  SUPABASE_ANON_KEY: 'YOUR_PUBLISHABLE_OR_ANON_KEY',
+  APP_URL: 'http://localhost:8080/',
+  BILLING_ENABLED: false
+};

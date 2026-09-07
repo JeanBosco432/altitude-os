@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="ALTITUDE OS — plateforme personnelle de discipline, journal et analyse de trading." />
+    <meta name="theme-color" content="#04060a" />
+    <title>ALTITUDE OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./src/styles.css" />
+    <script src="./config.js"></script>
+  </head>
+  <body>
+    <div class="launch-screen" id="launch-screen" aria-label="Chargement de ALTITUDE OS">
+      <div class="launch-inner">
+        <div class="launch-mark">AO</div>
+        <div class="launch-name">ALTITUDE OS</div>
+        <div class="launch-sub">Trading · Discipline · Progression</div>
+        <div class="launch-dots" aria-hidden="true">
+          <span class="launch-dot">•</span><span class="launch-dot">•</span><span class="launch-dot">•</span>
+        </div>
+      </div>
+    </div>
+
+    <main class="auth-shell" id="auth-screen" hidden>
+      <section class="auth-card">
+        <div class="auth-brand"><div class="brand-mark">AO</div><div><div class="brand-name">ALTITUDE OS</div><div class="brand-sub">TRADING · DISCIPLINE · PROGRESSION</div></div></div>
+        <div id="auth-content"></div>
+        <div class="auth-legal">ALTITUDE OS est un outil de journalisation et de discipline. Il ne constitue pas un conseil financier.</div>
+      </section>
+    </main>
+
+    <div id="app-shell" hidden>
+      <aside class="sidebar">
+        <div class="brand"><div class="brand-mark">AO</div><div><div class="brand-name">ALTITUDE OS</div><div class="brand-sub">desk personnel</div></div></div>
+        <div class="nav-group-label">EXÉCUTION</div>
+        <div class="nav-item active" data-view="dashboard">▤ Dashboard</div>
+        <div class="nav-item" data-view="analyse">◈ Analyse</div>
+        <div class="nav-item" data-view="setups">✓ Setups</div>
+        <div class="nav-item" data-view="risk">◎ Risk Manager</div>
+        <div class="nav-group-label">REVUE</div>
+        <div class="nav-item" data-view="journal">▦ Journal</div>
+        <div class="nav-item" data-view="weekly">↺ Revue hebdomadaire</div>
+        <div class="nav-item" data-view="stats">▲ Statistiques</div>
+        <div class="nav-item" data-view="rules">▥ Livre de règles</div>
+        <div class="nav-group-label">SYSTÈME</div>
+        <div class="nav-item" data-view="settings">⚙ Paramètres</div>
+        <div class="nav-footer">
+          <div class="account-mini" id="account-mini"></div>
+          <div class="status-chip" id="global-status"><span class="status-dot"></span><span class="label">TRADING AUTORISÉ</span></div>
+        </div>
+      </aside>
+
+      <div class="main">
+        <div class="view active" id="view-dashboard"></div>
+        <div class="view" id="view-analyse"></div>
+        <div class="view" id="view-setups"></div>
+        <div class="view" id="view-risk"></div>
+        <div class="view" id="view-journal"></div>
+        <div class="view" id="view-weekly"></div>
+        <div class="view" id="view-stats"></div>
+        <div class="view" id="view-rules"></div>
+        <div class="view" id="view-settings"></div>
+      </div>
+
+      <div class="modal-backdrop" id="modal-backdrop"><div class="modal" id="modal"></div></div>
+      <div class="lock-screen" id="review-lock" style="display:none;z-index:90;">
+        <div class="lock-card">
+          <div class="lock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 1112 0v2M5 10h14v10H5V10z" stroke="#f0546a" stroke-width="1.6"/></svg></div>
+          <div class="lock-title">Revue hebdomadaire obligatoire</div>
+          <div class="lock-sub" id="review-lock-text"></div>
+          <button class="btn btn-primary" id="go-review" style="width:100%;margin-top:22px;">Terminer ma revue hebdomadaire</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
