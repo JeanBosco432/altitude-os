@@ -1,0 +1,12 @@
+{
+  "name": "ALTITUDE OS",
+  "short_name": "ALTITUDE",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#061019",
+  "theme_color": "#061019",
+  "description": "Trading operating system pour stratégies personnelles, risque, journal et performance.",
+  "icons": [
+    {"src":"./favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

@@ -77,24 +77,17 @@ Flux disponibles :
 
 ## Modèle de stratégie
 
-Trois unités de temps :
+ALTITUDE OS ne contient aucune stratégie de trading propriétaire. Chaque utilisateur crée ses propres stratégies dans son état privé.
 
-```text
-H1 -> M30 -> M5
-```
+Une stratégie contient notamment :
 
-H1 + M30 déterminent la tendance principale par la MM20.
+- conditions d’entrée ;
+- confirmations ;
+- règles de risque ;
+- règles de sortie ;
+- marchés et unités de temps libres.
 
-Scénarios :
-
-```text
-HHH
-BBB
-HHB
-BBH
-```
-
-Les setups sont définis dans un catalogue interne et peuvent être étendus sans changer le moteur de navigation.
+Avant la création d’une position, la checklist de la stratégie sélectionnée est confirmée. Une copie (`strategySnapshot`) est enregistrée dans le trade pour préserver l’historique même si la stratégie change ensuite.
 
 ## Limites de la version actuelle
 

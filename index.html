@@ -1,82 +1,109 @@
 <!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="ALTITUDE OS — plateforme personnelle de discipline, journal et analyse de trading." />
-    <meta name="theme-color" content="#04060a" />
-    <title>ALTITUDE OS</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./src/styles.css" />
-    <script src="./config.js"></script>
-  </head>
-  <body>
-    <div class="launch-screen" id="launch-screen" aria-label="Chargement de ALTITUDE OS">
-      <div class="launch-inner">
-        <div class="launch-mark">AO</div>
-        <div class="launch-name">ALTITUDE OS</div>
-        <div class="launch-sub">Trading · Discipline · Progression</div>
-        <div class="launch-dots" aria-hidden="true">
-          <span class="launch-dot">•</span><span class="launch-dot">•</span><span class="launch-dot">•</span>
-        </div>
-      </div>
+<html lang="fr" data-theme="midnight">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="ALTITUDE OS — discipline, risque, journal et performance pour traders." />
+  <meta name="theme-color" content="#071019" />
+  <meta property="og:title" content="ALTITUDE OS" />
+  <meta property="og:description" content="Votre système de trading : stratégies personnelles, risque, journal, historique et progression." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>ALTITUDE OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./src/styles.css" />
+  <script src="./config.js"></script>
+</head>
+<body>
+  <div id="launch-screen" class="launch-screen" aria-label="Chargement de ALTITUDE OS">
+    <div class="launch-ambient"></div>
+    <div class="launch-core">
+      <div class="launch-monogram">AO</div>
+      <div class="launch-title">ALTITUDE OS</div>
+      <div class="launch-baseline">Trading · Discipline · Progression</div>
+      <div class="launch-progress" aria-hidden="true"><span></span><span></span><span></span></div>
     </div>
+  </div>
 
-    <main class="auth-shell" id="auth-screen" hidden>
-      <section class="auth-card">
-        <div class="auth-brand"><div class="brand-mark">AO</div><div><div class="brand-name">ALTITUDE OS</div><div class="brand-sub">TRADING · DISCIPLINE · PROGRESSION</div></div></div>
-        <div id="auth-content"></div>
-        <div class="auth-legal">ALTITUDE OS est un outil de journalisation et de discipline. Il ne constitue pas un conseil financier.</div>
-      </section>
-    </main>
+  <main id="auth-screen" class="auth-shell" hidden>
+    <section class="auth-brand-panel">
+      <div class="auth-noise"></div>
+      <div class="auth-brand-top"><span class="brand-mark">AO</span><span>ALTITUDE OS</span></div>
+      <div class="auth-brand-copy">
+        <p class="eyebrow">TRADING OPERATING SYSTEM</p>
+        <h1>Votre processus.<br><em>Enfin mesurable.</em></h1>
+        <p>Un espace de travail privé pour gérer vos comptes, vos stratégies, votre risque et votre progression — sans jamais passer un ordre à votre place.</p>
+      </div>
+      <div class="auth-brand-foot">altitudetrad.com</div>
+    </section>
+    <section class="auth-form-panel">
+      <div id="auth-content" class="auth-content"></div>
+      <p class="legal-copy">ALTITUDE OS est un outil de journalisation et de discipline. Il ne constitue pas un conseil financier.</p>
+    </section>
+  </main>
 
-    <div id="app-shell" hidden>
-      <aside class="sidebar">
-        <div class="brand"><div class="brand-mark">AO</div><div><div class="brand-name">ALTITUDE OS</div><div class="brand-sub">desk personnel</div></div></div>
-        <div class="nav-group-label">EXÉCUTION</div>
-        <div class="nav-item active" data-view="dashboard">▤ Dashboard</div>
-        <div class="nav-item" data-view="analyse">◈ Analyse</div>
-        <div class="nav-item" data-view="setups">✓ Setups</div>
-        <div class="nav-item" data-view="risk">◎ Risk Manager</div>
-        <div class="nav-group-label">REVUE</div>
-        <div class="nav-item" data-view="journal">▦ Journal</div>
-        <div class="nav-item" data-view="weekly">↺ Revue hebdomadaire</div>
-        <div class="nav-item" data-view="stats">▲ Statistiques</div>
-        <div class="nav-item" data-view="rules">▥ Livre de règles</div>
-        <div class="nav-group-label">SYSTÈME</div>
-        <div class="nav-item" data-view="settings">⚙ Paramètres</div>
-        <div class="nav-footer">
-          <div class="account-mini" id="account-mini"></div>
-          <div class="status-chip" id="global-status"><span class="status-dot"></span><span class="label">TRADING AUTORISÉ</span></div>
-        </div>
-      </aside>
-
-      <div class="main">
-        <div class="view active" id="view-dashboard"></div>
-        <div class="view" id="view-analyse"></div>
-        <div class="view" id="view-setups"></div>
-        <div class="view" id="view-risk"></div>
-        <div class="view" id="view-journal"></div>
-        <div class="view" id="view-weekly"></div>
-        <div class="view" id="view-stats"></div>
-        <div class="view" id="view-rules"></div>
-        <div class="view" id="view-settings"></div>
+  <div id="app-shell" class="app-shell" hidden>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-row">
+        <div class="brand-mark">AO</div>
+        <div class="brand-stack"><strong>ALTITUDE OS</strong><span>Trade · Plan · Progress</span></div>
       </div>
 
-      <div class="modal-backdrop" id="modal-backdrop"><div class="modal" id="modal"></div></div>
-      <div class="lock-screen" id="review-lock" style="display:none;z-index:90;">
-        <div class="lock-card">
-          <div class="lock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 1112 0v2M5 10h14v10H5V10z" stroke="#f0546a" stroke-width="1.6"/></svg></div>
-          <div class="lock-title">Revue hebdomadaire obligatoire</div>
-          <div class="lock-sub" id="review-lock-text"></div>
-          <button class="btn btn-primary" id="go-review" style="width:100%;margin-top:22px;">Terminer ma revue hebdomadaire</button>
-        </div>
-      </div>
-    </div>
+      <nav class="nav" aria-label="Navigation principale">
+        <button class="nav-item active" data-view="dashboard"><span class="nav-icon">⌂</span><span>Tableau de bord</span></button>
+        <button class="nav-item" data-view="accounts"><span class="nav-icon">▣</span><span>Comptes</span></button>
+        <button class="nav-item" data-view="strategies"><span class="nav-icon">◇</span><span>Stratégies</span></button>
+        <button class="nav-item" data-view="journal"><span class="nav-icon">▤</span><span>Journal</span></button>
+        <button class="nav-item" data-view="history"><span class="nav-icon">◷</span><span>Historique</span></button>
+        <button class="nav-item" data-view="productivity"><span class="nav-icon">╱</span><span>Productivité</span></button>
+        <div class="nav-separator"></div>
+        <button class="nav-item" data-view="weekly"><span class="nav-icon">↺</span><span>Revue hebdo</span></button>
+        <button class="nav-item" data-view="rules"><span class="nav-icon">□</span><span>Règles & notes</span></button>
+        <div class="nav-separator"></div>
+        <button class="nav-item" data-view="profile"><span class="nav-icon">○</span><span>Profil</span></button>
+        <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span><span>Paramètres</span></button>
+      </nav>
 
-    <script type="module" src="./src/main.js"></script>
-  </body>
+      <div class="sidebar-bottom">
+        <div class="theme-mini" id="theme-mini"></div>
+        <button class="profile-mini" id="profile-mini"></button>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Réduire la navigation">☰</button>
+        <button class="command-search" id="command-search"><span>⌕</span><span>Rechercher un trade, une stratégie, une note…</span><kbd>⌘ K</kbd></button>
+        <div class="topbar-actions">
+          <div id="sync-badge" class="sync-badge"></div>
+          <button class="icon-control" id="notifications-btn" aria-label="Notifications">◌</button>
+          <button class="btn btn-primary" id="new-trade-global">+ Nouveau trade</button>
+        </div>
+      </header>
+
+      <div class="view-stack">
+        <section class="view active" id="view-dashboard"></section>
+        <section class="view" id="view-accounts"></section>
+        <section class="view" id="view-strategies"></section>
+        <section class="view" id="view-journal"></section>
+        <section class="view" id="view-history"></section>
+        <section class="view" id="view-productivity"></section>
+        <section class="view" id="view-weekly"></section>
+        <section class="view" id="view-rules"></section>
+        <section class="view" id="view-profile"></section>
+        <section class="view" id="view-settings"></section>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop" hidden><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+  <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+  <script type="module" src="./src/main.js"></script>
+  <script>if(location.protocol==='https:'&&'serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}</script>
+</body>
 </html>

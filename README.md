@@ -1,93 +1,84 @@
 # ALTITUDE OS
 
-Plateforme personnelle de trading orientée **discipline, stratégie, gestion du risque, journalisation et revue hebdomadaire**.
+ALTITUDE OS est un **trading operating system** personnel orienté discipline, stratégies personnalisées, gestion du risque, journalisation, historique et progression.
 
-## Ce qui est inclus
+## V5 — ce qui change
 
-- Design premium ALTITUDE OS basé sur la direction artistique validée.
-- Splash screen ALTITUDE OS avec **3 points qui s'activent l'un après l'autre**.
-- Comptes utilisateurs via Supabase Auth : inscription, connexion, vérification email, mot de passe oublié.
-- Mémoire par compte : synchronisation cloud + cache local.
-- Isolation des données par utilisateur via Supabase Row Level Security (RLS).
-- Captures avant/après trade dans un bucket Supabase privé.
-- Mode démo local utilisable sans backend.
-- Analyse H1 → M30 → M5 avec scénarios HHH / BBB / HHB / BBH.
-- Setups actuellement définis : marteaux, marteaux inversés, avalements, flèches directionnelles, réintégrations et séquences de marteaux déjà décrites.
-- Risk Manager : risque fixe, ratio minimum, objectif 1:3, limites jour/semaine/mois.
-- Journal, qualité d'exécution, PnL et R.
-- Revue hebdomadaire obligatoire samedi → vendredi et verrouillage si elle n'est pas terminée.
-- Livre de règles.
-- Statistiques.
-- Export / import JSON.
-- Suppression de compte via Supabase Edge Function fournie.
-- Déploiement GitHub Pages automatisé par GitHub Actions.
+- Aucune stratégie propriétaire n’est codée dans le produit : chaque utilisateur construit sa propre checklist.
+- Confirmation obligatoire de la stratégie personnelle avant la création d’une position.
+- Plusieurs comptes de trading dans le même espace.
+- Solde et risque modifiables à tout moment, par compte, avec recalcul automatique.
+- Historique des ajustements de solde.
+- Risque fixe ou en pourcentage.
+- Sortie manuelle avant TP, sortie partielle, TP, SL, break-even ou invalidation.
+- Modification d’une position ouverte : SL, TP et note, avec historique des changements.
+- Calcul automatique du PnL d’une sortie et possibilité de saisir le PnL réellement exécuté.
+- Journal filtrable, triable et paginé.
+- Captures avant/après trade : Storage Supabase privé en cloud, données locales en mode démo.
+- Historique navigable semaine par semaine, mois par mois, trimestre par trimestre et année par année.
+- Productivité : PnL, R, win rate, profit factor, drawdown, qualité d’exécution, séries et performance par stratégie.
+- Distinction entre **résultat financier** et **qualité du trade**.
+- Revue individuelle des trades + revue hebdomadaire.
+- Livre de règles avec statuts, favoris et suivi des violations.
+- Profil utilisateur enrichi avec photo.
+- 5 thèmes : Midnight, Summit, Obsidian, Glacier et Carbon.
+- Export/import JSON, export CSV et remise à zéro.
+- PWA activée uniquement en production HTTPS pour éviter les problèmes de cache en développement local.
+- La palette de recherche est créée uniquement à la demande (`⌘K`) et n’apparaît jamais au démarrage.
+
+Voir `docs/ALTITUDE-V5-CHANGES.md`.
 
 ## Architecture
 
-- **Frontend** : HTML / CSS / JavaScript modules, sans framework lourd.
-- **Hébergement frontend** : GitHub Pages.
+- **Frontend** : HTML / CSS / JavaScript sans framework lourd.
+- **Hébergement** : GitHub Pages.
 - **Authentification / base / stockage** : Supabase.
-- **Données utilisateur** : une ligne JSONB privée dans `user_states`, isolée par RLS.
-- **Captures** : bucket privé `trade-media`.
+- **Données utilisateur** : état JSONB privé dans `user_states`, isolé par RLS.
+- **Cache local** : `localStorage` par utilisateur.
 - **Suppression de compte** : Edge Function `delete-account`.
+- **Paiement** : infrastructure préparée, désactivée tant que `BILLING_ENABLED=false`.
 
-Ce choix garde l'application légère et fidèle au design actuel. Une migration vers React n'est pas nécessaire pour lancer le produit ; elle pourra être faite plus tard si l'équipe ou le produit grossit fortement.
+La V5 reste compatible avec l’architecture Supabase existante : les nouveaux champs sont ajoutés dans le JSON utilisateur et les anciens états sont migrés côté navigateur par `mergeState()`.
 
-## Test local ultra rapide
-
-Dans Terminal :
+## Test local
 
 ```bash
-cd chemin/vers/altitude-os-production
+cd ~/Downloads/altitude-os-production
 python3 -m http.server 8080
 ```
 
-Puis ouvre :
+Puis :
 
 ```text
-http://localhost:8080
+http://localhost:8080/
 ```
 
-Ou sur Mac, tu peux double-cliquer sur `serve.command` si macOS l'autorise. Le terminal doit rester ouvert pendant le test.
+Le service worker n’est pas enregistré sur `localhost`.
 
-Sans Supabase configuré, clique sur **Continuer en mode démo locale**.
+## Configuration
 
-## Activer les comptes cloud
+Le vrai `config.js` local ne doit jamais être commité. Il contient uniquement des paramètres publics d’exécution :
 
-Voir `docs/DEPLOYMENT.md`. Les étapes principales sont :
+```js
+window.ALTITUDE_CONFIG = {
+  SUPABASE_URL: '...',
+  SUPABASE_ANON_KEY: '...',
+  APP_URL: 'https://altitudetrad.com/',
+  BILLING_ENABLED: false
+};
+```
 
-1. créer un projet Supabase ;
-2. exécuter `supabase/schema.sql` ;
-3. récupérer l'URL du projet et la clé publishable/anon ;
-4. configurer les URLs d'authentification ;
-5. déployer l'Edge Function de suppression de compte ;
-6. ajouter les variables/secrets dans GitHub ;
-7. activer GitHub Pages avec GitHub Actions.
+Ne place jamais la clé Supabase `service_role` dans le frontend.
 
+## Commercialisation
 
-## Règles de stratégie encore volontairement bloquées
+Avant d’activer la vente :
 
-Certaines variantes que tu as décrites n'avaient pas encore un niveau d'entrée ou de stop-loss totalement univoque. Elles sont **visibles dans ALTITUDE OS mais marquées « À COMPLÉTER » et ne peuvent pas créer de trade**. Le code ne devine donc aucune règle de trading.
+- finaliser les plans Free / Premium ;
+- activer Stripe et ses Edge Functions ;
+- finaliser CGU, confidentialité, remboursement et mentions légales ;
+- tester les parcours inscription → onboarding → stratégie → trade → sortie → revue ;
+- vérifier la suppression de compte et les exports ;
+- faire un test multi-utilisateur RLS.
 
-Quand tu compléteras ces setups, il suffira de modifier leur définition dans `src/main.js` et de retirer `draft:true` après validation de la règle.
-
-## Important avant de commercialiser
-
-Le code fournit l'infrastructure technique de comptes et de données privées. Avant de vendre l'accès, il faut encore renseigner les éléments que le code ne peut pas inventer pour toi :
-
-- identité légale de l'éditeur ;
-- adresse / email de support ;
-- CGU ;
-- politique de confidentialité ;
-- politique de remboursement ;
-- prix des abonnements ;
-- compte Stripe ou autre prestataire de paiement ;
-- domaine définitif.
-
-Voir `docs/COMMERCIALISATION.md`.
-
-## Sécurité
-
-Ne mets **jamais** la clé Supabase `service_role` dans `config.js`, GitHub Pages ou le JavaScript frontend. Seule la clé publishable/anon doit être utilisée par le navigateur, avec RLS activé.
-
-Voir `docs/SECURITY.md`.
+Voir `docs/COMMERCIALISATION.md` et `docs/SECURITY.md`.

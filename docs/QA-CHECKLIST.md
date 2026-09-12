@@ -1,67 +1,93 @@
-# QA — checklist avant mise en ligne
+# QA — ALTITUDE OS V5
 
-## Splash
+## Démarrage / Auth
+- [ ] La palette de recherche est absente au démarrage.
+- [ ] Session active → Dashboard.
+- [ ] Session inactive → Connexion.
+- [ ] Inscription, confirmation email, connexion et mot de passe oublié fonctionnent.
+- [ ] La démo locale n’est proposée qu’en local ou sans Supabase.
 
-- [ ] Le logo ALTITUDE OS apparaît immédiatement.
-- [ ] Les 3 points s'activent successivement.
-- [ ] L'écran disparaît après environ 1,25 s.
-- [ ] Si Supabase est indisponible, l'écran de connexion apparaît quand même et le mode démo reste accessible.
+## Onboarding
+- [ ] L’onboarding s’affiche une seule fois pour un nouvel espace.
+- [ ] Prénom, compte, solde, risque et thème sont sauvegardés.
 
-## Auth
+## Comptes
+- [ ] Ajouter plusieurs comptes.
+- [ ] Changer le compte principal.
+- [ ] Modifier solde, devise, courtier et risque.
+- [ ] Risque en montant fixe et en pourcentage.
+- [ ] Une modification manuelle de solde crée un ajustement.
+- [ ] Une position ouverte empêche la suppression du compte concerné.
 
-- [ ] Créer Compte A.
-- [ ] Confirmer son email.
-- [ ] Se connecter.
-- [ ] Se déconnecter.
-- [ ] Mot de passe oublié.
-- [ ] Créer Compte B.
-- [ ] Vérifier que B ne voit aucune donnée de A.
+## Stratégies
+- [ ] Aucune stratégie n’est préchargée.
+- [ ] Créer/modifier/archiver une stratégie.
+- [ ] Ajouter des règles dans les 4 catégories.
+- [ ] Une stratégie sans règle ne peut pas être utilisée.
+- [ ] La checklist complète est obligatoire avant le calcul de risque.
+- [ ] Le snapshot de stratégie reste lisible après modification/archivage.
 
-## Analyse
+## Trades / Risque
+- [ ] Choisir compte, stratégie, actif et direction.
+- [ ] Entry/SL/TP calculent correctement R:R et taille indicative.
+- [ ] Un risque ponctuel peut être différent du risque par défaut du compte.
+- [ ] Le trade conserve son risque historique.
+- [ ] Modifier SL/TP d’une position ouverte crée une entrée d’historique.
 
-- [ ] H1/M30 non alignés => aucun scénario.
-- [ ] HHH détecté correctement.
-- [ ] BBB détecté correctement.
-- [ ] HHB détecté correctement.
-- [ ] BBH détecté correctement.
-- [ ] Les setups marqués « à compléter » ne peuvent pas être envoyés au Risk Manager.
+## Sorties
+- [ ] Sortie manuelle avant TP.
+- [ ] Sortie partielle avec pourcentage libre.
+- [ ] TP, SL, break-even, invalidation et autre raison.
+- [ ] PnL automatique cohérent avec la taille initiale.
+- [ ] Override PnL réel fonctionne.
+- [ ] Le solde du bon compte est mis à jour.
+- [ ] Une clôture complète passe le trade à `closed`.
 
-## Risk Manager
+## Captures
+- [ ] Capture avant/après en mode local.
+- [ ] Capture avant/après dans le bucket privé `trade-media` en cloud.
+- [ ] Les images privées sont chargées via signed URL.
 
-- [ ] BUY : SL sous entrée et TP au-dessus.
-- [ ] SELL : SL au-dessus entrée et TP en dessous.
-- [ ] Ratio < 1:2 => trade impossible.
-- [ ] Ratio >= 1:2 => trade possible.
-- [ ] +3R clôturé => blocage de la journée.
-- [ ] 2 trades => blocage de la journée.
-- [ ] 5 pertes semaine => blocage semaine.
-- [ ] 10 gains semaine => blocage semaine.
-- [ ] Capital >= objectif mensuel => blocage mois.
+## Journal / Historique
+- [ ] Recherche, filtres et tri du journal.
+- [ ] Pagination du journal.
+- [ ] Navigation semaine précédente/suivante.
+- [ ] Navigation mois précédent/suivant.
+- [ ] Navigation trimestre précédent/suivant.
+- [ ] Navigation année précédente/suivante.
+- [ ] Filtres + pagination de l’historique.
+- [ ] Export CSV.
 
-## Journal
+## Productivité
+- [ ] 20 derniers / mois / trimestre / année / tout.
+- [ ] Filtre par compte.
+- [ ] PnL, R, win rate, profit factor, drawdown, qualité.
+- [ ] Courbes de progression et drawdown.
+- [ ] Performance par stratégie.
 
-- [ ] Création du trade.
-- [ ] Capture avant.
-- [ ] Clôture WIN / LOSS / BE.
-- [ ] Calcul R correct.
-- [ ] Calcul PnL correct.
-- [ ] Capital mis à jour.
-- [ ] Qualité d'exécution distincte du résultat financier.
-- [ ] Capture après.
+## Revue / Livre de règles
+- [ ] Évaluer la qualité d’un trade indépendamment du résultat.
+- [ ] Revue hebdomadaire avec progression.
+- [ ] Création d’une règle depuis la revue.
+- [ ] Statuts Active / À surveiller / Archivée.
+- [ ] Favoris et compteur de violations.
 
-## Revue
+## Profil / Apparence
+- [ ] Photo, nom, ville, pays, langue, fuseau, expérience, style, bio.
+- [ ] 5 thèmes.
+- [ ] Densité et taille du texte.
 
-- [ ] Période analysée = samedi → vendredi.
-- [ ] Revue disponible samedi/dimanche.
-- [ ] Lundi, revue précédente non terminée => verrouillage.
-- [ ] Tous les champs de chaque trade sont obligatoires.
-- [ ] Règle ajoutée au Livre de règles.
-- [ ] Déverrouillage après validation.
+## Données / Sécurité
+- [ ] Export JSON.
+- [ ] Import JSON.
+- [ ] Reset journal.
+- [ ] Reset complet en conservant le compte de connexion.
+- [ ] Synchronisation Supabase.
+- [ ] Deux utilisateurs ne voient jamais les données l’un de l’autre.
+- [ ] Suppression de compte via Edge Function.
 
-## Cloud
-
-- [ ] Données sauvegardées, puis visibles après reconnexion sur un autre navigateur.
-- [ ] Captures visibles après reconnexion.
-- [ ] RLS testé entre deux utilisateurs.
-- [ ] Export JSON fonctionne.
-- [ ] Suppression du compte supprime les données et l'utilisateur.
+## Production
+- [ ] `config.js` ignoré par Git.
+- [ ] `BILLING_ENABLED=false` tant que Stripe n’est pas activé.
+- [ ] Service worker uniquement en HTTPS, pas sur localhost.
+- [ ] GitHub Pages + domaine + HTTPS fonctionnent.
