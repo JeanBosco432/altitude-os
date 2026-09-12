@@ -1,5 +1,8 @@
 # ALTITUDE OS
 
+> **V4 produit** : l’interface a été refondue pour la commercialisation. Les stratégies ne sont plus codées en dur : chaque utilisateur configure ses propres règles. ALTITUDE OS gère désormais plusieurs comptes de trading, les sorties avant TP/partielles, l’historique par période, la productivité, le profil et cinq thèmes. Voir `docs/ALTITUDE-V4-CHANGES.md`.
+
+
 Plateforme personnelle de trading orientée **discipline, stratégie, gestion du risque, journalisation et revue hebdomadaire**.
 
 ## Ce qui est inclus
