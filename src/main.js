@@ -29,7 +29,7 @@
   const fmtDateTime = d => new Date(d).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
 
   const defaults = () => ({
-    version:6.2,
+    version:6.3,
     profile:{firstName:'',lastName:'',displayName:'',avatar:'',country:'France',city:'',timezone:'Europe/Paris',language:'fr',experience:'',tradingStyle:'',bio:''},
     preferences:{theme:'midnight',density:'comfortable',textScale:'default',sidebarCollapsed:false,weekStart:'monday',confirmStrategy:true},
     accounts:[
@@ -54,7 +54,7 @@
       return [];
     };
     const merged={
-      ...d,...src,version:6.2,
+      ...d,...src,version:6.3,
       profile:{...d.profile,...(src.profile||{})},
       preferences:{...d.preferences,...(src.preferences||{})},
       weeklyReviews:src.weeklyReviews||{},
@@ -81,7 +81,7 @@
       balanceAdjustments:Array.isArray(a.balanceAdjustments)?a.balanceAdjustments:[],
       createdAt:a.createdAt||new Date().toISOString()
     }));
-    // ALTITUDE Trade 6.1 — garantir les trois environnements principaux demandés.
+    // ALTITUDE Trade 6.3 — garantir les trois environnements principaux demandés.
     // On conserve les comptes personnalisés existants, mais Deriv, JustMarkets et FundedNext
     // sont toujours présents et affichés en premier.
     const coreAccounts=d.accounts;
@@ -318,7 +318,7 @@
     const rated=c.filter(t=>t.quality==='good'||t.quality==='bad'),good=rated.filter(t=>t.quality==='good').length;
     const winRs=wins.map(t=>Number(t.resultR)||0),lossRs=losses.map(t=>Math.abs(Number(t.resultR)||0)),risks=c.map(t=>Number(t.riskUSD)||0).filter(v=>v>0),durations=c.map(durationMinutes).filter(v=>v>0);
     const bestTrade=c.length?[...c].sort((a,b)=>(Number(b.pnl)||0)-(Number(a.pnl)||0))[0]:null,worstTrade=c.length?[...c].sort((a,b)=>(Number(a.pnl)||0)-(Number(b.pnl)||0))[0]:null;
-    return {closed:c.length,wins:wins.length,losses:losses.length,be:be.length,pnl,totalR,winRate:c.length?wins.length/c.length*100:0,lossRate:c.length?losses.length/c.length*100:0,beRate:c.length?be.length/c.length*100:0,avgR:c.length?totalR/c.length:0,expectancyR:c.length?totalR/c.length:0,profitFactor:grossLoss?grossWin/grossLoss:(grossWin?Infinity:0),maxDrawdown:maxDD,maxDrawdownPct,bestWinStreak:bestWin,worstLossStreak:worstLoss,currentWinStreak:currentWin,currentLossStreak:currentLoss,qualityRate:rated.length?good/rated.length*100:null,rated:rated.length,avgWinR:average(winRs),avgLossR:average(lossRs),payoffR:average(lossRs)?average(winRs)/average(lossRs):0,avgRisk:average(risks),avgHoldMinutes:average(durations),bestTrade,worstTrade}
+    return {closed:c.length,wins:wins.length,losses:losses.length,be:be.length,pnl,totalR,winRate:c.length?wins.length/c.length*100:0,lossRate:c.length?losses.length/c.length*100:0,beRate:c.length?be.length/c.length*100:0,avgR:c.length?totalR/c.length:0,expectancyR:c.length?totalR/c.length:0,profitFactor:grossLoss?grossWin/grossLoss:(grossWin?Infinity:0),maxDrawdown:maxDD,maxDrawdownPct:maxDDPct,bestWinStreak:bestWin,worstLossStreak:worstLoss,currentWinStreak:currentWin,currentLossStreak:currentLoss,qualityRate:rated.length?good/rated.length*100:null,rated:rated.length,avgWinR:average(winRs),avgLossR:average(lossRs),payoffR:average(lossRs)?average(winRs)/average(lossRs):0,avgRisk:average(risks),avgHoldMinutes:average(durations),bestTrade,worstTrade}
   }
 
   function equitySeries(trades=closedTrades(), accountId='all'){
@@ -708,7 +708,7 @@
     const winRs=wins.map(v62TradeR),lossRs=losses.map(t=>Math.abs(v62TradeR(t))),risks=c.map(t=>Math.abs(v62Number(t.riskUSD))).filter(n=>n>0),holds=c.map(t=>{const a=v62Date(t.openedAt),b=v62Date(t.closedAt);return a&&b?Math.max(0,(b-a)/60000):0}).filter(Boolean);
     const bestTrade=c.length?[...c].sort((a,b)=>v62TradePnl(b)-v62TradePnl(a))[0]:null,worstTrade=c.length?[...c].sort((a,b)=>v62TradePnl(a)-v62TradePnl(b))[0]:null;
     const avg=x=>x.length?x.reduce((s,n)=>s+v62Number(n),0)/x.length:0;
-    return {closed:c.length,wins:wins.length,losses:losses.length,be:bes.length,pnl,totalR,winRate:c.length?wins.length/c.length*100:0,lossRate:c.length?losses.length/c.length*100:0,beRate:c.length?bes.length/c.length*100:0,avgR:c.length?totalR/c.length:0,expectancyR:c.length?totalR/c.length:0,profitFactor:grossLoss?grossWin/grossLoss:(grossWin?Infinity:0),maxDrawdown:maxDD,maxDrawdownPct,bestWinStreak:maxWinRun,worstLossStreak:maxLossRun,avgWinR:avg(winRs),avgLossR:avg(lossRs),payoffR:avg(lossRs)?avg(winRs)/avg(lossRs):0,avgRisk:avg(risks),avgHoldMinutes:avg(holds),bestTrade,worstTrade,qualityRate:null,rated:0};
+    return {closed:c.length,wins:wins.length,losses:losses.length,be:bes.length,pnl,totalR,winRate:c.length?wins.length/c.length*100:0,lossRate:c.length?losses.length/c.length*100:0,beRate:c.length?bes.length/c.length*100:0,avgR:c.length?totalR/c.length:0,expectancyR:c.length?totalR/c.length:0,profitFactor:grossLoss?grossWin/grossLoss:(grossWin?Infinity:0),maxDrawdown:maxDD,maxDrawdownPct:maxDDPct,bestWinStreak:maxWinRun,worstLossStreak:maxLossRun,avgWinR:avg(winRs),avgLossR:avg(lossRs),payoffR:avg(lossRs)?avg(winRs)/avg(lossRs):0,avgRisk:avg(risks),avgHoldMinutes:avg(holds),bestTrade,worstTrade,qualityRate:null,rated:0};
   }
 
   function v62EquitySeries(trades){let total=0;return v62Closed(trades).slice().sort((a,b)=>(v62Date(a.closedAt||a.openedAt)?.getTime()||0)-(v62Date(b.closedAt||b.openedAt)?.getTime()||0)).map(t=>{total+=v62TradePnl(t);return Number(total.toFixed(2))})}

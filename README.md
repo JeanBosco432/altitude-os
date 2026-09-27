@@ -1,4 +1,4 @@
-# ALTITUDE Trade V6.2
+# ALTITUDE Trade V6.3
 
 Version de stabilisation des vues analytiques.
 

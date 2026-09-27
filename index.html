@@ -111,7 +111,7 @@
     <div class="media-lightbox-stage"><img id="media-lightbox-img" alt="Capture agrandie"></div>
   </div>
 
-  <script type="module" src="./src/main.js?v=6.2.0"></script>
+  <script type="module" src="./src/main.js?v=6.3.0"></script>
   <script>
     const isLocal=['localhost','127.0.0.1'].includes(location.hostname);
     if('serviceWorker' in navigator){
@@ -121,7 +121,7 @@
           await Promise.all(regs.map(r=>r.unregister()));
           if('caches' in window){for(const key of await caches.keys()) await caches.delete(key)}
         }else if(location.protocol==='https:'){
-          navigator.serviceWorker.register('./sw.js?v=6.1.0',{updateViaCache:'none'}).catch(()=>{});
+          navigator.serviceWorker.register('./sw.js?v=6.3.0',{updateViaCache:'none'}).catch(()=>{});
         }
       });
     }
