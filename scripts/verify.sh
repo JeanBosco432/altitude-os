@@ -13,7 +13,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 class Parser(HTMLParser): pass
 p=Parser(); p.feed(Path('index.html').read_text())
-required=['index.html','config.js','favicon.svg','manifest.webmanifest','sw.js','CNAME','assets/boscofx-trader-bg.webp','src/main.js','src/styles.css','supabase/schema.sql','.github/workflows/deploy-pages.yml']
+required=['index.html','config.example.js','favicon.svg','manifest.webmanifest','sw.js','CNAME','assets/boscofx-trader-bg.webp','src/main.js','src/styles.css','supabase/schema.sql','.github/workflows/deploy-pages.yml']
 missing=[x for x in required if not Path(x).exists()]
 if missing: raise SystemExit('Missing: '+', '.join(missing))
 
@@ -23,7 +23,7 @@ workflow=Path('.github/workflows/deploy-pages.yml').read_text()
 for token in ['styles.css?v=7.0.0','main.js?v=7.0.0','boscofx-trader-bg.webp']:
     if token not in html and token not in css:
         raise SystemExit(f'Missing V7 asset/version token: {token}')
-for token in ['manifest.webmanifest','sw.js','assets/.']:
+for token in ['manifest.webmanifest','sw.js','assets/.','_site/config.js','SUPABASE_URL','SUPABASE_ANON_KEY']:
     if token not in workflow:
         raise SystemExit(f'GitHub Pages workflow misses asset: {token}')
 

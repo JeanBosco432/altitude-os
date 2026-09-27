@@ -1,3 +1,9 @@
+# ALTITUDE Trade V7.0.1 — GitHub Pages hotfix
+
+- Corrige l'échec GitHub Actions `Missing: config.js`.
+- `config.js` reste volontairement ignoré par Git et est généré pendant le déploiement depuis les variables/secrets GitHub.
+- Le vérificateur exige désormais `config.example.js` et valide la génération de `_site/config.js` dans le workflow.
+
 # ALTITUDE Trade V7.0 — BOSCOFX Final
 
 ## UI / UX final

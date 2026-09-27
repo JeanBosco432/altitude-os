@@ -1,3 +1,7 @@
+# ALTITUDE Trade V7.0.1
+
+Hotfix GitHub Pages : le build ne dépend plus d'un `config.js` local non versionné. Le workflow génère le fichier de configuration au déploiement à partir de GitHub Actions Variables/Secrets.
+
 # ALTITUDE Trade — BOSCOFX Final (V7.0)
 
 Journal de trading personnel et analytics : Deriv, JustMarkets et FundedNext, gestion des trades, captures, stratégies, equity, drawdown, Profit Factor, expectancy et historique.
