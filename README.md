@@ -1,4 +1,4 @@
-# ALTITUDE Trade V6
+# ALTITUDE Trade V6.1
 
 ALTITUDE Trade est un journal de trading multi-comptes orienté **exécution, médias, statistiques et progression**.
 

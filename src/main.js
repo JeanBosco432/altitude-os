@@ -29,7 +29,7 @@
   const fmtDateTime = d => new Date(d).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
 
   const defaults = () => ({
-    version:6,
+    version:6.1,
     profile:{firstName:'',lastName:'',displayName:'',avatar:'',country:'France',city:'',timezone:'Europe/Paris',language:'fr',experience:'',tradingStyle:'',bio:''},
     preferences:{theme:'midnight',density:'comfortable',textScale:'default',sidebarCollapsed:false,weekStart:'monday',confirmStrategy:true},
     accounts:[
@@ -54,7 +54,7 @@
       return [];
     };
     const merged={
-      ...d,...src,version:6,
+      ...d,...src,version:6.1,
       profile:{...d.profile,...(src.profile||{})},
       preferences:{...d.preferences,...(src.preferences||{})},
       weeklyReviews:src.weeklyReviews||{},
@@ -81,6 +81,27 @@
       balanceAdjustments:Array.isArray(a.balanceAdjustments)?a.balanceAdjustments:[],
       createdAt:a.createdAt||new Date().toISOString()
     }));
+    // ALTITUDE Trade 6.1 — garantir les trois environnements principaux demandés.
+    // On conserve les comptes personnalisés existants, mais Deriv, JustMarkets et FundedNext
+    // sont toujours présents et affichés en premier.
+    const coreAccounts=d.accounts;
+    for(const core of coreAccounts){
+      const brokerKey=String(core.broker||'').toLowerCase();
+      let existing=merged.accounts.find(a=>a.id===core.id||String(a.broker||'').toLowerCase()===brokerKey);
+      if(existing){
+        existing.id=core.id;
+        existing.name=core.name;
+        existing.broker=core.broker;
+        existing.accountType=core.accountType;
+        existing.marketType=core.marketType;
+        existing.assetList=[...core.assetList];
+        existing.color=existing.color||core.color;
+      }else{
+        merged.accounts.push({...core,assetList:[...core.assetList],balanceAdjustments:[]});
+      }
+    }
+    const coreOrder=new Map([['acc_deriv',0],['acc_justmarkets',1],['acc_fundednext',2]]);
+    merged.accounts.sort((a,b)=>(coreOrder.has(a.id)?coreOrder.get(a.id):99)-(coreOrder.has(b.id)?coreOrder.get(b.id):99));
     if(!merged.accounts.some(a=>a.active)&&merged.accounts[0]) merged.accounts[0].active=true;
     merged.strategies=(Array.isArray(src.strategies)?src.strategies:[]).map(st=>({
       id:st.id||uid('strat'),name:st.name||'Stratégie',description:st.description||'',
@@ -311,7 +332,18 @@
 
   function setView(name){currentView=name;$$('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${name}`));$$('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));renderView(name);if(innerWidth<620)$('#sidebar')?.classList.remove('mobile-open')}
   function renderAll(){['dashboard','accounts','strategies','journal','history','productivity','weekly','rules','profile','settings'].forEach(renderView);renderProfileMini();renderThemeMini();updateSyncBadge()}
-  function renderView(name){const fn={dashboard:renderDashboard,accounts:renderAccounts,strategies:renderStrategies,journal:renderJournal,history:renderHistory,productivity:renderProductivity,weekly:renderWeekly,rules:renderRules,profile:renderProfile,settings:renderSettings}[name];fn?.()}
+  function renderView(name){
+    const fn={dashboard:renderDashboard,accounts:renderAccounts,strategies:renderStrategies,journal:renderJournal,history:renderHistory,productivity:renderProductivity,weekly:renderWeekly,rules:renderRules,profile:renderProfile,settings:renderSettings}[name];
+    try{
+      if(typeof fn!=='function') throw new Error(`Vue inconnue : ${name}`);
+      fn();
+    }catch(error){
+      console.error(`[ALTITUDE Trade] Erreur de rendu — ${name}`,error);
+      const el=$(`#view-${name}`);
+      if(el) el.innerHTML=`<div class="card render-error"><div class="eyebrow">ALTITUDE TRADE</div><div class="page-title">Cette vue n’a pas pu s’afficher.</div><p class="page-sub">Rechargez la page. Si le problème persiste, ouvrez la console afin d’identifier l’erreur.</p><button class="btn btn-primary" data-retry-view="${esc(name)}">Réessayer</button></div>`;
+      $(`[data-retry-view="${name}"]`,el||document)?.addEventListener('click',()=>renderView(name));
+    }
+  }
 
   function displayName(){return state.profile.firstName||state.profile.displayName||accountProfile?.display_name||currentUser?.user_metadata?.display_name||'Trader'}
   function initials(){const n=`${state.profile.firstName||''} ${state.profile.lastName||''}`.trim()||displayName();return n.split(/\s+/).slice(0,2).map(x=>x[0]?.toUpperCase()).join('')||'AT'}
@@ -330,6 +362,20 @@
     return `<svg class="line-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--success)" stop-opacity=".26"/><stop offset="1" stop-color="var(--success)" stop-opacity="0"/></linearGradient></defs>${[.25,.5,.75].map(r=>`<line class="chart-grid-line" x1="0" x2="${w}" y1="${h*r}" y2="${h*r}"/>`).join('')}<polygon class="chart-area" style="fill:url(#${id})" points="${p},${h-p} ${pts} ${w-p},${h-p}"/><polyline class="chart-line" points="${pts}"/></svg>`
   }
   function bars(trades){const c=trades.filter(t=>t.status==='closed').slice(-26);if(!c.length)return `<div class="empty" style="height:130px">Aucun trade clôturé.</div>`;const max=Math.max(1,...c.map(t=>Math.abs(Number(t.resultR)||0)));return `<div class="performance-bars">${c.map(t=>`<span class="bar ${(t.resultR||0)<0?'neg':''}" style="height:${24+Math.abs(t.resultR||0)/max*80}px" title="${fmtR(t.resultR)}"></span>`).join('')}</div>`}
+
+  function pnlBucketChart(trades,period='month',currency='USD'){
+    const kind=['year','all'].includes(period)?'month':['quarter'].includes(period)?'week':'day';
+    const rows=aggregatePeriod(trades,kind).slice(-18);
+    if(!rows.length)return `<div class="chart-empty-state"><strong>Le graphique se construira avec vos trades.</strong><span>Les gains et pertes de la période apparaîtront ici automatiquement.</span></div>`;
+    const max=Math.max(1,...rows.map(x=>Math.abs(x.pnl)));
+    return `<div class="pnl-bucket-chart">${rows.map(x=>{const h=Math.max(8,Math.abs(x.pnl)/max*92);return `<div class="pnl-bucket-item" title="${esc(x.key)} · ${fmtMoney(x.pnl,currency)}"><span class="pnl-bucket-value ${x.pnl>=0?'up':'down'}">${x.pnl>=0?'+':''}${Math.round(x.pnl)}</span><div class="pnl-bucket-track"><i class="${x.pnl>=0?'positive':'negative'}" style="height:${h}%"></i></div><small>${esc(x.key.slice(5)||x.key)}</small></div>`}).join('')}</div>`;
+  }
+
+  function resultDonut(st){
+    const total=Math.max(1,st.wins+st.losses+st.be),w=st.wins/total*100,l=st.losses/total*100;
+    const bg=st.closed?`conic-gradient(var(--success) 0 ${w}%, var(--danger) ${w}% ${w+l}%, var(--warning) ${w+l}% 100%)`:`conic-gradient(var(--surface-3) 0 100%)`;
+    return `<div class="result-donut-wrap"><div class="result-donut" style="background:${bg}"><div><strong>${st.closed?fmtPct(st.winRate):'—'}</strong><span>Win rate</span></div></div><div class="donut-legend"><span><i class="dot-win"></i>Gagnants <b>${st.wins}</b></span><span><i class="dot-loss"></i>Perdants <b>${st.losses}</b></span><span><i class="dot-be"></i>BE <b>${st.be}</b></span></div></div>`;
+  }
 
   function renderDashboard(){
     const el=$('#view-dashboard');if(!el)return;
@@ -360,7 +406,12 @@
         <section class="card"><div class="card-head"><div><div class="card-title">Performance par compte</div><div class="page-sub">Comparer Deriv, JustMarkets, FundedNext et vos autres comptes</div></div><button class="btn btn-ghost" id="dash-manage-accounts">Analyser</button></div><div class="account-performance-list">${accountPerf.map(({account:a,stats:x})=>`<button class="account-performance-row" data-dash-account="${a.id}"><span class="account-dot" style="background:${a.color}"></span><span><b>${esc(a.name)}</b><small>${esc(accountMarketLabel(a))}</small></span><span class="mono ${x.pnl>=0?'up':'down'}">${fmtMoney(x.pnl,a.currency)}</span><span class="mono">${x.closed?fmtPct(x.winRate):'—'}</span></button>`).join('')}</div></section>
         <section class="card"><div class="card-head"><div><div class="card-title">Actifs</div><div class="page-sub">Ce qui contribue réellement à vos résultats</div></div><button class="btn btn-ghost" id="dash-stats">Statistiques</button></div>${assets.length?`<div class="asset-breakdown">${assets.map(x=>`<div class="asset-breakdown-row"><span><b>${esc(x.key)}</b><small>${x.trades.length} trades · ${fmtPct(x.winRate)}</small></span><strong class="mono ${x.pnl>=0?'up':'down'}">${fmtMoney(x.pnl,currency)}</strong></div>`).join('')}</div>`:'<div class="quiet-empty">Pas encore assez de trades clôturés.</div>'}</section>
       </div>
-      <section class="card" style="margin-top:12px"><div class="card-head"><div><div class="card-title">Derniers trades</div><div class="page-sub">Tous comptes confondus</div></div><button class="btn btn-ghost" id="dash-all-trades">Voir le journal</button></div>${recent.length?tradeRows(recent,true):`<div class="quiet-empty">Votre journal est encore vide.</div>`}</section>`;
+      <div class="dashboard-visual-grid">
+        <section class="card"><div class="card-head"><div><div class="card-title">PnL dans le temps</div><div class="page-sub">Gains et pertes agrégés sur la période</div></div></div>${pnlBucketChart(periodTrades,dashboardPeriod,currency)}</section>
+        <section class="card"><div class="card-head"><div><div class="card-title">Répartition des résultats</div><div class="page-sub">Gagnants · perdants · break-even</div></div></div>${resultDonut(st)}</section>
+        <section class="card"><div class="card-head"><div><div class="card-title">Drawdown</div><div class="page-sub">Repli cumulé depuis le dernier plus haut</div></div><span class="down mono">${st.closed?fmtPct(Math.abs(st.maxDrawdownPct)):'—'}</span></div>${lineChart(drawdownSeries(periodTrades.filter(t=>t.status==='closed')))}</section>
+      </div>
+      <section class="card" style="margin-top:12px"><div class="card-head"><div><div class="card-title">Derniers trades</div><div class="page-sub">Tous comptes confondus</div></div><button class="btn btn-ghost" id="dash-all-trades">Voir le journal</button></div>${recent.length?tradeRows(recent,true):`<div class="quiet-empty"><strong>Votre journal est encore vide.</strong><span>Créez votre premier trade pour commencer à alimenter toutes les statistiques.</span></div>`}</section>`;
     $$('[data-dashboard-period]').forEach(b=>b.onclick=()=>{dashboardPeriod=b.dataset.dashboardPeriod;renderDashboard()});
     $('#dash-manage-accounts')?.addEventListener('click',()=>setView('accounts'));$('#dash-stats')?.addEventListener('click',()=>setView('productivity'));$('#dash-all-trades')?.addEventListener('click',()=>setView('journal'));$('#dash-new-trade')?.addEventListener('click',openNewTrade);$('#dashboard-next-action')?.addEventListener('click',()=>action.action==='new-trade'?openNewTrade():setView(action.action));$$('[data-open-trade]').forEach(b=>b.onclick=()=>openCloseTradeModal(b.dataset.openTrade));$$('[data-trade-id]').forEach(b=>b.onclick=()=>openTradeDetails(b.dataset.tradeId));$$('[data-dash-account]').forEach(b=>b.onclick=()=>{selectedAccountId=b.dataset.dashAccount;setView('accounts')})
   }
@@ -373,7 +424,7 @@
     const el=$('#view-accounts');if(!el)return;const primary=primaryAccount();if(!selectedAccountId||!accountById(selectedAccountId))selectedAccountId=primary?.id||state.accounts[0]?.id||null;const selected=accountById(selectedAccountId);const pTrades=selected?tradesInPeriod(accountAnalyticsPeriod,selected.id):[],st=selected?statsFor(pTrades,selected.initialBalance):statsFor([]),series=selected?equitySeries(pTrades.filter(t=>t.status==='closed'),selected.id):[],assets=selected?breakdownBy(pTrades,t=>t.asset):[];
     el.innerHTML=`${pageHead('Comptes','Un capital, un historique et des statistiques séparés pour chaque environnement.','<button class="btn btn-primary" id="add-account">+ Ajouter un compte</button>')}
       <div class="account-summary card"><div><span>Capital global</span><strong>${totalBalanceLabel()}</strong></div><div><span>Comptes</span><strong>${state.accounts.length}</strong></div><div><span>Compte principal</span><strong>${esc(primary?.name||'—')}</strong></div></div>
-      <div class="account-cards">${state.accounts.map(a=>{const ast=statsFor(state.trades.filter(t=>t.accountId===a.id),a.initialBalance);return `<article class="card account-card ${selected?.id===a.id?'selected':''}"><div class="card-head"><div><div class="row-main"><span class="account-dot" style="background:${a.color}"></span>${esc(a.name)} ${a.active?'<span class="pill success">Principal</span>':''}</div><div class="row-sub">${esc(a.broker||'Courtier non renseigné')} · ${esc(accountMarketLabel(a))}</div></div><button class="btn" data-edit-account="${a.id}">Modifier</button></div><div class="account-balance-total">${fmtMoney(a.balance,a.currency)}</div><div class="account-card-stats"><span>PnL total <b class="${ast.pnl>=0?'up':'down'}">${fmtMoney(ast.pnl,a.currency)}</b></span><span>Win rate <b>${ast.closed?fmtPct(ast.winRate):'—'}</b></span><span>Drawdown <b>${ast.closed?fmtPct(Math.abs(ast.maxDrawdownPct)):'—'}</b></span></div><div class="account-assets">${a.assetList.map(x=>`<span>${esc(x)}</span>`).join('')}</div><button class="btn btn-ghost" data-analyse-account="${a.id}" style="width:100%;margin-top:12px">Voir les statistiques</button></article>`}).join('')}</div>
+      <div class="account-cards">${state.accounts.map(a=>{const ast=statsFor(state.trades.filter(t=>t.accountId===a.id),a.initialBalance);return `<article class="card account-card ${selected?.id===a.id?'selected':''}"><div class="card-head"><div><div class="row-main"><span class="account-dot" style="background:${a.color}"></span>${esc(a.name)} ${a.active?'<span class="pill success">Principal</span>':''}</div><div class="row-sub">${esc(a.broker||'Courtier non renseigné')} · ${esc(accountMarketLabel(a))}</div></div><button class="btn" data-edit-account="${a.id}">Modifier</button></div><div class="account-balance-total">${fmtMoney(a.balance,a.currency)}</div><div class="account-card-stats"><span>PnL total <b class="${ast.pnl>=0?'up':'down'}">${fmtMoney(ast.pnl,a.currency)}</b></span><span>Win rate <b>${ast.closed?fmtPct(ast.winRate):'—'}</b></span><span>Drawdown <b>${ast.closed?fmtPct(Math.abs(ast.maxDrawdownPct)):'—'}</b></span></div><div class="account-assets">${(a.assetList||[]).map(x=>`<span>${esc(x)}</span>`).join('')}</div><button class="btn btn-ghost" data-analyse-account="${a.id}" style="width:100%;margin-top:12px">Voir les statistiques</button></article>`}).join('')}</div>
       ${selected?`<section class="account-analytics card"><div class="card-head"><div><div class="eyebrow">ANALYSE DU COMPTE</div><div class="card-title">${esc(selected.name)}</div><div class="page-sub">${esc(selected.broker)} · ${esc(accountMarketLabel(selected))}</div></div>${periodTabs(accountAnalyticsPeriod,'data-account-period')}</div><div class="grid metric-grid metric-grid-8 compact-metrics">${metric('Solde',fmtMoney(selected.balance,selected.currency),`Initial ${fmtMoney(selected.initialBalance,selected.currency)}`)}${metric('PnL',fmtMoney(st.pnl,selected.currency),fmtR(st.totalR),st.pnl>=0)}${metric('Trades',String(st.closed),`${st.wins} G · ${st.losses} P`)}${metric('Win rate',st.closed?fmtPct(st.winRate):'—',`${fmtPct(st.lossRate)} loss`)}${metric('Profit factor',st.closed?(Number.isFinite(st.profitFactor)?st.profitFactor.toFixed(2):(st.profitFactor===Infinity?'∞':'—')):'—','')}${metric('Espérance',st.closed?fmtR(st.expectancyR):'—','Par trade')}${metric('Max DD',st.closed?fmtPct(Math.abs(st.maxDrawdownPct)):'—',fmtMoney(st.maxDrawdown,selected.currency),false)}${metric('Risque moyen',st.closed?fmtMoney(st.avgRisk,selected.currency):'—','')}</div><div class="two-col account-analytics-grid"><div class="analytics-chart-panel">${lineChart(series)}</div><div><div class="card-label">Performance par actif</div>${assets.length?assets.slice(0,8).map(x=>`<div class="asset-breakdown-row"><span><b>${esc(x.key)}</b><small>${x.trades.length} trades · ${fmtPct(x.winRate)}</small></span><strong class="mono ${x.pnl>=0?'up':'down'}">${fmtMoney(x.pnl,selected.currency)}</strong></div>`).join(''):'<div class="quiet-empty">Aucune donnée pour cette période.</div>'}</div></div></section>`:''}`;
     $('#add-account').onclick=()=>openAccountModal();$$('[data-edit-account]').forEach(b=>b.onclick=()=>openAccountModal(b.dataset.editAccount));$$('[data-analyse-account]').forEach(b=>b.onclick=()=>{selectedAccountId=b.dataset.analyseAccount;renderAccounts()});$$('[data-account-period]').forEach(b=>b.onclick=()=>{accountAnalyticsPeriod=b.dataset.accountPeriod;renderAccounts()})
   }

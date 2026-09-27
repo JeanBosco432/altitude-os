@@ -1,3 +1,11 @@
+# V6.1 — Dashboard & navigation hotfix
+
+- Correction des vues vides (rendu protégé + cache-busting).
+- Les comptes Deriv, JustMarkets et FundedNext sont garantis dans l’espace.
+- Dashboard enrichi : courbe, PnL par période, donut résultats, drawdown, performance comptes/actifs.
+- États vides explicites pour les comptes sans trades.
+- Désactivation/nettoyage du service worker en local pour éviter les anciens assets.
+
 # Changelog
 
 ## V6 — Journal & Analytics
