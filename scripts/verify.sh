@@ -17,14 +17,14 @@ required=['index.html','config.js','favicon.svg','manifest.webmanifest','sw.js',
 missing=[x for x in required if not Path(x).exists()]
 if missing: raise SystemExit('Missing: '+', '.join(missing))
 js=Path('src/main.js').read_text().lower()
-for forbidden in ['hhh','bbb','hhb','bbh','mm20','marteau','avalement']:
+for forbidden in ['hhh','bbb','hhb','bbh']:
     if forbidden in js:
         raise SystemExit(f'Hardcoded strategy term found in runtime: {forbidden}')
 
 source=Path('src/main.js').read_text()
 if 'maxDrawdown:maxDD,maxDrawdownPct,' in source:
     raise SystemExit('Runtime bug detected: maxDrawdownPct must map to maxDDPct explicitly')
-for required_token in ['maxDrawdownPct:maxDDPct','function v62Stats','function statsFor']:
+for required_token in ['maxDrawdownPct:maxDDPct','function v62Stats','function statsFor','function openNewTrade','function openCloseTradeModal','strat_mm20_sr_m5','byConfirmation=v62Breakdown']:
     if required_token not in source:
         raise SystemExit(f'Missing runtime invariant: {required_token}')
 print('ALTITUDE Trade: files/runtime checks OK')

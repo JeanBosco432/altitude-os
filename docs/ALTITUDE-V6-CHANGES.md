@@ -23,3 +23,7 @@ Les périodes disponibles sont jour, semaine, mois, trimestre, année et histori
 ## 6. Compatibilité
 
 Le schéma Supabase ne change pas : la V6 ajoute les nouveaux champs dans le JSON privé de l'utilisateur. Les médias V5 unitaires sont migrés vers des tableaux de médias.
+
+
+## V6.4 — Trade Capture & Management
+Nouveau flux de saisie, journal enrichi, gestion BE/partiels, média et statistiques par confirmation.
