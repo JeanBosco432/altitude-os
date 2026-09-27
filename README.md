@@ -1,63 +1,36 @@
-# ALTITUDE OS
+# ALTITUDE Trade V6
 
-ALTITUDE OS est un **trading operating system** personnel orienté discipline, stratégies personnalisées, gestion du risque, journalisation, historique et progression.
+ALTITUDE Trade est un journal de trading multi-comptes orienté **exécution, médias, statistiques et progression**.
 
-## V5 — ce qui change
+## V6 — principaux ajouts
 
-- Aucune stratégie propriétaire n’est codée dans le produit : chaque utilisateur construit sa propre checklist.
-- Confirmation obligatoire de la stratégie personnelle avant la création d’une position.
-- Plusieurs comptes de trading dans le même espace.
-- Solde et risque modifiables à tout moment, par compte, avec recalcul automatique.
-- Historique des ajustements de solde.
-- Risque fixe ou en pourcentage.
-- Sortie manuelle avant TP, sortie partielle, TP, SL, break-even ou invalidation.
-- Modification d’une position ouverte : SL, TP et note, avec historique des changements.
-- Calcul automatique du PnL d’une sortie et possibilité de saisir le PnL réellement exécuté.
-- Journal filtrable, triable et paginé.
-- Captures avant/après trade : Storage Supabase privé en cloud, données locales en mode démo.
-- Historique navigable semaine par semaine, mois par mois, trimestre par trimestre et année par année.
-- Productivité : PnL, R, win rate, profit factor, drawdown, qualité d’exécution, séries et performance par stratégie.
-- Distinction entre **résultat financier** et **qualité du trade**.
-- Revue individuelle des trades + revue hebdomadaire.
-- Livre de règles avec statuts, favoris et suivi des violations.
-- Profil utilisateur enrichi avec photo.
-- 5 thèmes : Midnight, Summit, Obsidian, Glacier et Carbon.
-- Export/import JSON, export CSV et remise à zéro.
-- PWA activée uniquement en production HTTPS pour éviter les problèmes de cache en développement local.
-- La palette de recherche est créée uniquement à la demande (`⌘K`) et n’apparaît jamais au démarrage.
-
-Voir `docs/ALTITUDE-V5-CHANGES.md`.
+- Vue globale de tous les comptes avec périodes : jour, semaine, mois, trimestre, année et tout l'historique.
+- Comptes séparés avec capital initial, solde actuel, risque, broker/prop firm, type de marché et liste d'actifs.
+- Préconfiguration pour un nouvel espace :
+  - Deriv · Synthétiques : V10, V25, V75, Boom 500, Jump 10 ;
+  - JustMarkets · Forex/CFD : BTCUSD, GBPJPY, XAUUSD, US30 ;
+  - FundedNext · Prop Firm : BTCUSD, GBPJPY, XAUUSD, US30.
+- Nouveau trade : compte, stratégie, actif, BUY/SELL, timeframe, session, confirmation, entrée, SL, TP optionnel, risque, observation.
+- Gestion des positions ouvertes, sorties partielles, break-even, TP, SL et clôture manuelle.
+- Mise à jour automatique du solde après chaque sortie.
+- Médias améliorés : plusieurs captures avant/après, drag & drop, galerie, plein écran et zoom.
+- Statistiques approfondies : PnL, R, win rate, loss rate, BE, profit factor, expectancy, payoff, drawdown, risque moyen, séries, meilleur/pire trade, meilleur jour/semaine/mois, performances par actif, compte, stratégie et direction.
+- Analyse détaillée par compte avec courbe et performance par actif.
+- Journal avec bloc dédié aux trades en cours.
+- Export CSV enrichi avec timeframe, session, confirmation, risque et note.
+- Compatibilité conservée avec l'état JSONB Supabase de la V5.
 
 ## Architecture
 
-- **Frontend** : HTML / CSS / JavaScript sans framework lourd.
-- **Hébergement** : GitHub Pages.
-- **Authentification / base / stockage** : Supabase.
-- **Données utilisateur** : état JSONB privé dans `user_states`, isolé par RLS.
-- **Cache local** : `localStorage` par utilisateur.
-- **Suppression de compte** : Edge Function `delete-account`.
-- **Paiement** : infrastructure préparée, désactivée tant que `BILLING_ENABLED=false`.
-
-La V5 reste compatible avec l’architecture Supabase existante : les nouveaux champs sont ajoutés dans le JSON utilisateur et les anciens états sont migrés côté navigateur par `mergeState()`.
-
-## Test local
-
-```bash
-cd ~/Downloads/altitude-os-production
-python3 -m http.server 8080
-```
-
-Puis :
-
-```text
-http://localhost:8080/
-```
-
-Le service worker n’est pas enregistré sur `localhost`.
+- Frontend : HTML / CSS / JavaScript sans framework lourd.
+- Hébergement : GitHub Pages.
+- Auth, base et Storage privé : Supabase.
+- Données : `user_states.state` en JSONB + cache `localStorage`.
+- Captures cloud : bucket privé `trade-media`.
 
 ## Configuration
 
-Le vrai `config.js` local ne doit jamais être commité. Il contient uniquement des paramètres publics d’exécution :
+Le fichier `config.js` est ignoré par Git et doit rester local / généré au déploiement.
 
 ```js
 window.ALTITUDE_CONFIG = {
@@ -68,17 +41,26 @@ window.ALTITUDE_CONFIG = {
 };
 ```
 
-Ne place jamais la clé Supabase `service_role` dans le frontend.
+Ne placez jamais de clé `service_role` dans le frontend.
 
-## Commercialisation
+## Test local
 
-Avant d’activer la vente :
+```bash
+python3 -m http.server 8080
+```
 
-- finaliser les plans Free / Premium ;
-- activer Stripe et ses Edge Functions ;
-- finaliser CGU, confidentialité, remboursement et mentions légales ;
-- tester les parcours inscription → onboarding → stratégie → trade → sortie → revue ;
-- vérifier la suppression de compte et les exports ;
-- faire un test multi-utilisateur RLS.
+Puis ouvrir :
 
-Voir `docs/COMMERCIALISATION.md` et `docs/SECURITY.md`.
+```text
+http://localhost:8080/
+```
+
+## Vérification
+
+```bash
+bash scripts/verify.sh
+```
+
+## Mise à jour d'un projet existant
+
+Conservez votre dossier `.git` et votre `config.js` actuel. Remplacez les fichiers applicatifs par ceux de cette archive. Les anciennes données V5 sont migrées côté navigateur par `mergeState()`.

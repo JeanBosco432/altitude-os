@@ -1,27 +1,20 @@
 # Changelog
 
-## 3.0.0 — Production foundation
+## V6 — Journal & Analytics
 
-- identité ALTITUDE OS ;
-- splash à trois points corrigé ;
-- comptes Supabase ;
-- mémoire cloud par utilisateur ;
-- RLS et stockage privé ;
-- suppression de compte ;
-- infrastructure Stripe optionnelle ;
-- GitHub Pages workflow ;
-- stratégie HHH / BBB / HHB / BBH ;
-- blocage des variantes dont une règle reste à préciser ;
-- Risk Manager, journal, revue, règles et statistiques ;
-- documentation déploiement / sécurité / commercialisation.
+- Rebranding interface vers ALTITUDE Trade.
+- Tableau de bord global multi-comptes.
+- Statistiques quotidiennes, hebdomadaires, mensuelles, trimestrielles, annuelles et globales.
+- Analyse détaillée par compte.
+- PnL, R, win rate, loss rate, break-even, profit factor, expectancy, payoff, drawdown, risque moyen et séries.
+- Analyses par actif, compte, stratégie et direction.
+- Nouveau trade enrichi : timeframe, session, confirmation, risque et observation.
+- Univers d'actifs par compte.
+- Plusieurs captures avant/après, drag & drop, galerie et zoom.
+- Bloc Trades en cours.
+- Export CSV enrichi.
+- Migration V5 vers V6 compatible avec les états existants.
 
-## V5 — 12 septembre 2026
-- Strategy Builder générique : aucune stratégie propriétaire préchargée.
-- Confirmation obligatoire de la stratégie avant trade.
-- Multi-comptes avec ajustements de solde et risque indépendant.
-- Sorties avant TP, partielles et gestion SL/TP en cours de trade.
-- Journal filtrable + historique navigable semaine/mois/trimestre/année.
-- Productivité avancée et distinction résultat/qualité.
-- Revue individuelle + hebdomadaire et livre de règles enrichi.
-- Profil enrichi, onboarding, cinq thèmes, import/export et reset.
-- Manifest PWA + service worker production.
+## V5
+
+- Commercial core multi-utilisateur, comptes, stratégies personnelles, sorties partielles, historique et revues.

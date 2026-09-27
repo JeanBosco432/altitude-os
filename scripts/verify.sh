@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 if command -v node >/dev/null 2>&1; then
   node --check src/main.js
 else
-  echo "ALTITUDE OS: Node.js absent — contrôle syntaxique JS ignoré."
+  echo "ALTITUDE Trade: Node.js absent — contrôle syntaxique JS ignoré."
 fi
 
 python3 - <<'PY'
@@ -20,5 +20,5 @@ js=Path('src/main.js').read_text().lower()
 for forbidden in ['hhh','bbb','hhb','bbh','mm20','marteau','avalement']:
     if forbidden in js:
         raise SystemExit(f'Hardcoded strategy term found in runtime: {forbidden}')
-print('ALTITUDE OS: files/runtime checks OK')
+print('ALTITUDE Trade: files/runtime checks OK')
 PY
