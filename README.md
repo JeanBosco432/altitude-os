@@ -1,24 +1,32 @@
-# ALTITUDE Trade V6.4
+# ALTITUDE Trade — BOSCOFX Final (V7.0)
 
-Version centrée sur la saisie, le suivi et l'analyse complète des trades.
+Journal de trading personnel et analytics : Deriv, JustMarkets et FundedNext, gestion des trades, captures, stratégies, equity, drawdown, Profit Factor, expectancy et historique.
 
-## Inclus dans V6.4
-- Trois environnements séparés : Deriv, JustMarkets et FundedNext.
-- Actifs filtrés automatiquement selon le compte sélectionné.
-- Nouveau trade enrichi : stratégie, direction, contexte, date/heure, timeframes tendance/entrée, session, confirmation, confiance, état avant trade et observation personnelle.
-- Stratégie personnelle `MM20 + S/R + Confirmation M5` créée automatiquement uniquement lorsqu'aucune stratégie n'existe encore.
-- Calcul automatique du risque en % et en montant, R:R prévu et taille indicative.
-- Captures avant / pendant / après avec drag & drop, galerie, plein écran et zoom.
-- Journal avec trades ouverts, risque exposé, PnL du jour et historique complet.
-- Gestion d'une position : modification SL/TP, passage à break-even, sorties partielles 25/50/75/100 %, PnL réel facultatif et journal des modifications.
-- Statistiques globales, par compte, actif, stratégie, direction et confirmation.
-- Dashboard, comptes, historique et statistiques robustes avec migration des anciennes données.
+## Version finale UI
 
-## Installation
-Conserver votre `config.js` existant lors de la copie afin de garder la configuration Supabase actuelle.
+- Fond trader BOSCOFX intégré localement (`assets/boscofx-trader-bg.webp`).
+- Interface glass/dark/or cohérente, responsive et GitHub Pages ready.
+- Refonte des modales et formulaires : espacements stables, aucun champ collé à son label, focus sans chevauchement, footer sticky.
+- Wizard **Nouveau trade** élargi et responsive.
+- Cartes, tableaux, comptes, médias et statistiques protégés contre les débordements de texte.
+- 3 comptes cœur garantis : Deriv, JustMarkets, FundedNext.
+- Cache/service worker versionné en V7.0.
+
+## Déploiement GitHub
+
+Le dépôt contient `.github/workflows/deploy-pages.yml` pour GitHub Pages.
+
+**Important :** `config.js` fourni reste neutre. Sur votre dépôt réel, conservez votre `config.js` déjà configuré ou utilisez votre méthode habituelle de configuration Supabase. Ne publiez jamais une clé serveur/service-role.
+
+### Vérification locale
 
 ```bash
-rsync -av --exclude='.git' --exclude='config.js' ALTITUDE-TRADE-V6.4/ votre-projet/
+bash scripts/verify.sh
+python3 -m http.server 8080
 ```
 
-Puis lancer `bash scripts/verify.sh`.
+Puis ouvrir `http://localhost:8080/?v=70`.
+
+## Données
+
+Les migrations existantes restent compatibles. Cette version est une évolution UI/UX et fonctionnelle de la branche V6.4, sans remise à zéro volontaire des données.

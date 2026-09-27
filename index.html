@@ -4,18 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="description" content="ALTITUDE Trade — journal, risque, statistiques et progression pour traders." />
-  <meta name="theme-color" content="#071019" />
+  <meta name="theme-color" content="#080604" />
   <meta property="og:title" content="ALTITUDE Trade" />
   <meta property="og:description" content="Votre journal de trading : comptes, stratégies, médias, statistiques, drawdown et progression." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>ALTITUDE Trade</title>
+  <title>ALTITUDE Trade · BOSCOFX</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./src/styles.css?v=6.4.0" />
+  <link rel="preload" as="image" href="./assets/boscofx-trader-bg.webp" />
+  <link rel="stylesheet" href="./src/styles.css?v=7.0.0" />
   <script src="./config.js"></script>
 </head>
 <body>
@@ -24,7 +25,7 @@
     <div class="launch-core">
       <div class="launch-monogram">AT</div>
       <div class="launch-title">ALTITUDE TRADE</div>
-      <div class="launch-baseline">Journal · Analytics · Progression</div>
+      <div class="launch-baseline">BOSCOFX · Journal · Analytics · Progression</div>
       <div class="launch-progress" aria-hidden="true"><span></span><span></span><span></span></div>
     </div>
   </div>
@@ -50,7 +51,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand-row">
         <div class="brand-mark">AT</div>
-        <div class="brand-stack"><strong>ALTITUDE TRADE</strong><span>Journal · Stats · Progress</span></div>
+        <div class="brand-stack"><strong>ALTITUDE TRADE</strong><span>BOSCOFX · Journal · Stats · Progress</span></div>
       </div>
 
       <nav class="nav" aria-label="Navigation principale">
@@ -111,7 +112,7 @@
     <div class="media-lightbox-stage"><img id="media-lightbox-img" alt="Capture agrandie"></div>
   </div>
 
-  <script type="module" src="./src/main.js?v=6.4.0"></script>
+  <script type="module" src="./src/main.js?v=7.0.0"></script>
   <script>
     const isLocal=['localhost','127.0.0.1'].includes(location.hostname);
     if('serviceWorker' in navigator){
@@ -121,7 +122,7 @@
           await Promise.all(regs.map(r=>r.unregister()));
           if('caches' in window){for(const key of await caches.keys()) await caches.delete(key)}
         }else if(location.protocol==='https:'){
-          navigator.serviceWorker.register('./sw.js?v=6.4.0',{updateViaCache:'none'}).catch(()=>{});
+          navigator.serviceWorker.register('./sw.js?v=7.0.0',{updateViaCache:'none'}).catch(()=>{});
         }
       });
     }

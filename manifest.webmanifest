@@ -3,8 +3,8 @@
   "short_name": "ALTITUDE",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#061019",
-  "theme_color": "#061019",
+  "background_color": "#050607",
+  "theme_color": "#F3BD55",
   "description": "Journal de trading multi-comptes pour risque, médias, statistiques et progression.",
   "icons": [
     {"src":"./favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}

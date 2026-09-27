@@ -1,34 +1,34 @@
-# Design System ALTITUDE OS
+# ALTITUDE Trade V7 — Design System
 
-Direction conservée à partir du design validé : sombre, premium, calme, orientée précision.
+## Identité
+- Produit : ALTITUDE Trade
+- Signature visuelle : BOSCOFX
+- Direction : terminal de trading premium, noir obsidienne, verre, accents or.
 
-## Couleurs
+## Palette principale
+- Background : `#050607`
+- Surface : `#0D1115`
+- Surface secondaire : `#11171C`
+- Accent or : `#F3BD55`
+- Accent sombre : `#B77725`
+- Texte : `#F6F4EF`
+- Succès : `#2FD3A0`
+- Danger : `#EF5A72`
 
-```text
-Void        #04060a
-Surface 1   #0a0f16
-Surface 2   #101720
-Surface 3   #161e29
-Border      #212b38
-Text 1      #e9edf3
-Text 2      #8d97a7
-Mint        #3ddc97   validation / gain
-Red         #f0546a   risque / perte / blocage
-Amber       #c9a15c   accent / progression / focus
-```
+## Rythme
+Base 8 px. Espacements principaux : 8 / 12 / 16 / 18 / 24 / 28 / 36.
 
-## Typographies
+## Formulaires
+- Input : 52 px minimum
+- Radius : 13 px
+- Label séparé du champ par 8 px
+- Focus : border or + halo faible, sans outline superposé au texte
 
-- Titres : Space Grotesk
-- Interface : Inter
-- Prix / ratios / données : JetBrains Mono
+## Modales
+- Standard : 760 px max
+- Trade / large : 1040 px max
+- Mobile : bottom-sheet pleine largeur, 94dvh max
+- Footer sticky
 
-## Principes
-
-- une décision importante à la fois ;
-- états de validation explicites ;
-- aucun effet casino ;
-- animations courtes ;
-- SVG pour les schémas de setups ;
-- contraste élevé ;
-- informations financières en police monospace.
+## Wallpaper
+`assets/boscofx-trader-bg.webp` est atténué par plusieurs overlays sombres. Le contenu reste prioritaire.

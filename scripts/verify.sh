@@ -13,9 +13,20 @@ from html.parser import HTMLParser
 from pathlib import Path
 class Parser(HTMLParser): pass
 p=Parser(); p.feed(Path('index.html').read_text())
-required=['index.html','config.js','favicon.svg','manifest.webmanifest','sw.js','src/main.js','src/styles.css','supabase/schema.sql','.github/workflows/deploy-pages.yml']
+required=['index.html','config.js','favicon.svg','manifest.webmanifest','sw.js','CNAME','assets/boscofx-trader-bg.webp','src/main.js','src/styles.css','supabase/schema.sql','.github/workflows/deploy-pages.yml']
 missing=[x for x in required if not Path(x).exists()]
 if missing: raise SystemExit('Missing: '+', '.join(missing))
+
+html=Path('index.html').read_text()
+css=Path('src/styles.css').read_text()
+workflow=Path('.github/workflows/deploy-pages.yml').read_text()
+for token in ['styles.css?v=7.0.0','main.js?v=7.0.0','boscofx-trader-bg.webp']:
+    if token not in html and token not in css:
+        raise SystemExit(f'Missing V7 asset/version token: {token}')
+for token in ['manifest.webmanifest','sw.js','assets/.']:
+    if token not in workflow:
+        raise SystemExit(f'GitHub Pages workflow misses asset: {token}')
+
 js=Path('src/main.js').read_text().lower()
 for forbidden in ['hhh','bbb','hhb','bbh']:
     if forbidden in js:

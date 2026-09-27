@@ -341,8 +341,8 @@
   }
 
   function toast(message,type='info'){const stack=$('#toast-stack');if(!stack)return;const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=message;stack.appendChild(el);setTimeout(()=>el.remove(),type==='error'?6500:3800)}
-  function showModal(html,large=false){const back=$('#modal-backdrop'),m=$('#modal');m.className=`modal${large?' large':''}`;m.innerHTML=html;back.hidden=false;$$('[data-close-modal]',m).forEach(b=>b.onclick=hideModal);setTimeout(()=>m.querySelector('input,select,textarea,button')?.focus(),30)}
-  function hideModal(){$('#modal-backdrop').hidden=true;$('#modal').innerHTML=''}
+  function showModal(html,large=false){const back=$('#modal-backdrop'),m=$('#modal');const tradeWizard=html.includes('trade-wizard-progress'),tradeDetails=html.includes('trade-media-grid')||html.includes('trade-detail-metrics');m.className=`modal${large?' large':''}${tradeWizard?' trade-modal':''}${tradeDetails?' trade-detail-modal':''}`;m.innerHTML=html;back.hidden=false;document.body.classList.add('modal-open');$$('[data-close-modal]',m).forEach(b=>b.onclick=hideModal);setTimeout(()=>m.querySelector('input,select,textarea,button')?.focus(),30)}
+  function hideModal(){$('#modal-backdrop').hidden=true;$('#modal').innerHTML='';document.body.classList.remove('modal-open')}
   function confirmDialog({title,text,confirmLabel='Confirmer',danger=false,onConfirm}){showModal(`<div class="modal-head"><div><div class="modal-title">${esc(title)}</div><div class="modal-sub">${esc(text)}</div></div><button class="close-btn" data-close-modal>×</button></div><div class="modal-footer"><button class="btn" data-close-modal>Annuler</button><button class="btn ${danger?'btn-danger':'btn-primary'}" id="confirm-dialog">${esc(confirmLabel)}</button></div>`);$('#confirm-dialog').onclick=()=>{hideModal();onConfirm?.()}}
 
   function setView(name){currentView=name;$$('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${name}`));$$('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));renderView(name);if(innerWidth<620)$('#sidebar')?.classList.remove('mobile-open')}
