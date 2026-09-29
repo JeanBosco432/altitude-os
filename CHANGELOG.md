@@ -23,3 +23,12 @@
 - Service worker/cache V7.
 - Background embarqué dans le dépôt : pas de dépendance externe.
 - Fonctionnement Supabase/V6.4 conservé.
+
+## 7.1 — 2026-09-29
+- Modification complète des trades clôturés depuis Journal, Historique et fiche de trade.
+- Boutons Gain / Perte / Break-even avec correction du PnL et du R.
+- Réconciliation automatique du solde du compte après correction d'un trade clôturé.
+- Possibilité de corriger compte, actif, direction, stratégie, dates, entrée, SL, TP, risque, PnL, R et notes.
+- Journal d'audit « Correction post-clôture » conservant l'avant/après.
+- Option de reconstruire l'historique de sortie pour supprimer une clôture erronée.
+- Fond BOSCOFX rendu plus visible dans toutes les vues, tout en gardant les cartes lisibles.

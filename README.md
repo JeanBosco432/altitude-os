@@ -34,3 +34,6 @@ Puis ouvrir `http://localhost:8080/?v=70`.
 ## Données
 
 Les migrations existantes restent compatibles. Cette version est une évolution UI/UX et fonctionnelle de la branche V6.4, sans remise à zéro volontaire des données.
+
+### ALTITUDE Trade 7.1
+Cette version ajoute la correction post-clôture des trades et renforce l'immersion visuelle BOSCOFX sur toutes les vues.
