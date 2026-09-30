@@ -345,7 +345,8 @@
   function hideModal(){$('#modal-backdrop').hidden=true;$('#modal').innerHTML='';document.body.classList.remove('modal-open')}
   function confirmDialog({title,text,confirmLabel='Confirmer',danger=false,onConfirm}){showModal(`<div class="modal-head"><div><div class="modal-title">${esc(title)}</div><div class="modal-sub">${esc(text)}</div></div><button class="close-btn" data-close-modal>×</button></div><div class="modal-footer"><button class="btn" data-close-modal>Annuler</button><button class="btn ${danger?'btn-danger':'btn-primary'}" id="confirm-dialog">${esc(confirmLabel)}</button></div>`);$('#confirm-dialog').onclick=()=>{hideModal();onConfirm?.()}}
 
-  function setView(name){currentView=name;$$('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${name}`));$$('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));renderView(name);if(innerWidth<620)$('#sidebar')?.classList.remove('mobile-open')}
+  function setView(name){const changed=currentView!==name;currentView=name;$$('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${name}`));$$('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));renderView(name);const tt=$('#topbar-title');if(tt)tt.textContent=VIEW_TITLES[name]||'ALTITUDE Trade';if(innerWidth<=980)$('#sidebar')?.classList.remove('mobile-open');if(changed)window.scrollTo({top:0,behavior:'instant'})}
+  const VIEW_TITLES={dashboard:'Tableau de bord',accounts:'Comptes',strategies:'Stratégies',journal:'Journal',history:'Historique',productivity:'Statistiques',weekly:'Revue hebdo',rules:'Règles & notes',profile:'Profil',settings:'Paramètres'};
   function renderAll(){['dashboard','accounts','strategies','journal','history','productivity','weekly','rules','profile','settings'].forEach(renderView);renderProfileMini();renderThemeMini();updateSyncBadge()}
   function renderView(name){
     const fn={dashboard:renderDashboard,accounts:renderAccounts,strategies:renderStrategies,journal:renderJournal,history:renderHistory,productivity:renderProductivity,weekly:renderWeekly,rules:renderRules,profile:renderProfile,settings:renderSettings}[name];
@@ -529,7 +530,7 @@
       </div>
       <div class="modal-footer"><button class="btn" data-close-modal>Annuler</button><button class="btn btn-primary" id="trade-next">Continuer</button></div>`,true);
     const accountSel=$('#trade-account'),assetSel=$('#trade-asset-select'),custom=$('#trade-asset-custom');
-    const refreshAssets=()=>{assetSel.innerHTML=renderAssetOptions(accountSel.value);custom.hidden=true;const a=accountById(accountSel.value);if(a?.marketType==='synthetic')$('#trade-session').value='Synthétique'};
+    const refreshAssets=()=>{assetSel.innerHTML=renderAssetOptions(accountSel.value);custom.hidden=true;const a=accountById(accountSel.value);if(a?.marketType==='synthetic')$('#trade-session').value='Synthétique';else if($('#trade-session').value==='Synthétique')$('#trade-session').value=''};
     accountSel.onchange=refreshAssets;assetSel.onchange=()=>{custom.hidden=assetSel.value!=='__custom';if(!custom.hidden)custom.focus()};refreshAssets();
     $('#trade-next').onclick=()=>{const asset=(assetSel.value==='__custom'?custom.value:assetSel.value).trim();if(!asset){toast('Choisissez ou renseignez l’actif.','error');return}const strategy=strategyById($('#trade-strategy').value);const openedAt=$('#trade-opened-at').value?new Date($('#trade-opened-at').value).toISOString():new Date().toISOString();const draft={accountId:accountSel.value,strategyId:strategy.id,asset:asset.toUpperCase(),direction:$('#trade-direction').value,marketContext:$('#trade-market-context').value,trendTimeframe:$('#trade-trend-timeframe').value,entryTimeframe:$('#trade-entry-timeframe').value,timeframe:$('#trade-entry-timeframe').value,session:$('#trade-session').value,confirmation:$('#trade-confirmation').value,confidence:Number($('#trade-confidence').value||0),preTradeEmotion:$('#trade-emotion').value,openedAt,planNote:$('#trade-plan-note').value.trim(),beforeFiles:[],strategySnapshot:{id:strategy.id,name:strategy.name,description:strategy.description,entryRules:[...strategy.entryRules],confirmations:[...strategy.confirmations],riskRules:[...strategy.riskRules],exitRules:[...strategy.exitRules]}};openStrategyConfirmation(draft)};
   }
@@ -605,7 +606,7 @@
     const t=state.trades.find(x=>x.id===id);if(!t||t.status!=='closed')return;
     const oldAccount=accountById(t.accountId),oldPnl=Number(t.pnl||0),currency=oldAccount?.currency||t.currencySnapshot||'USD';
     const selectedResult=tradeResult(t);
-    const accounts=state.accounts.filter(a=>a.active!==false),strategies=state.strategies.filter(st=>!st.archived);
+    const accounts=state.accounts.slice(),strategies=state.strategies.filter(st=>!st.archived||st.id===t.strategyId);
     const accountOptions=accounts.map(a=>`<option value="${esc(a.id)}" ${a.id===t.accountId?'selected':''}>${esc(a.name)}</option>`).join('');
     const strategyOptions=strategies.map(st=>`<option value="${esc(st.id)}" ${st.id===t.strategyId?'selected':''}>${esc(st.name)}</option>`).join('');
     const assetOptions=(accountAssets(t.accountId).includes(t.asset)?accountAssets(t.accountId):[t.asset,...accountAssets(t.accountId)]).map(x=>`<option value="${esc(x)}" ${x===t.asset?'selected':''}>${esc(x)}</option>`).join('');
@@ -939,6 +940,242 @@
       <div class="two-col" style="margin-top:12px"><section class="card"><div class="card-title">Par confirmation</div>${byConfirmation.length?byConfirmation.slice(0,10).map(x=>`<div class="analytics-rank-row"><span><b>${esc(x.key)}</b><small>${x.trades} trades · WR ${fmtPct(x.winRate)}</small></span><strong class="${x.pnl>=0?'up':'down'}">${fmtMoney(x.pnl,currency)}</strong></div>`).join(''):'<div class="quiet-empty">Pas encore de données.</div>'}</section><section class="card"><div class="card-title">Par compte</div>${byAccount.length?byAccount.map(x=>`<div class="analytics-rank-row"><span><b>${esc(x.key)}</b><small>${x.trades} trades · WR ${fmtPct(x.winRate)}</small></span><strong class="${x.pnl>=0?'up':'down'}">${fmtMoney(x.pnl,currency)}</strong></div>`).join(''):'<div class="quiet-empty">Pas encore de données.</div>'}</section></div>`;
     $('#productivity-account',el).value=productivityAccount;$('#productivity-strategy',el).value=productivityStrategy;$('#productivity-asset',el).value=productivityAsset;$('#productivity-account',el).onchange=e=>{productivityAccount=e.target.value;renderProductivity()};$('#productivity-strategy',el).onchange=e=>{productivityStrategy=e.target.value;renderProductivity()};$('#productivity-asset',el).onchange=e=>{productivityAsset=e.target.value;renderProductivity()};$$('[data-productivity-period]',el).forEach(b=>b.onclick=()=>{productivityPeriod=b.dataset.productivityPeriod;renderProductivity()});
   };
+
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ALTITUDE Trade V8 — couche de présentation « Gold Terminal »
+  // Uniquement de l'affichage : aucune règle de calcul, de stockage ou de
+  // synchronisation n'est modifiée. Les statistiques viennent de v62Stats.
+  // ═══════════════════════════════════════════════════════════════════
+
+  const V8_ICONS={
+    wallet:'<rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10h18M16 15h2"/>',
+    trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+    scale:'<path d="M12 3v18M5 7h14M5 7l-3 7a4 4 0 0 0 6 0zM19 7l-3 7a4 4 0 0 0 6 0z"/>',
+    spark:'<path d="M12 2v6M12 16v6M2 12h6M16 12h6M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/>',
+    down:'<path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/>',
+    shield:'<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/>',
+    list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    star:'<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>',
+    enter:'<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>',
+    flag:'<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+    chevL:'<path d="M15 18l-6-6 6-6"/>',
+    chevR:'<path d="M9 18l6-6-6-6"/>'
+  };
+  function v8Icon(name,size=16){return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${V8_ICONS[name]||V8_ICONS.spark}</svg>`}
+  function v8MetricIcon(label){
+    const l=String(label||'').toLowerCase();
+    if(/capital|solde/.test(l))return 'wallet';
+    if(/pnl|réalisé/.test(l))return 'trend';
+    if(/win|qualit/.test(l))return 'target';
+    if(/profit|payoff|r:r/.test(l))return 'scale';
+    if(/draw|max dd/.test(l))return 'down';
+    if(/risque|sl/.test(l))return 'shield';
+    if(/trades/.test(l))return 'list';
+    if(/entrée/.test(l))return 'enter';
+    if(/tp/.test(l))return 'flag';
+    return 'spark';
+  }
+  function v8Signed(n,digits=2){const v=Number(n)||0;return `${v>0?'+':''}${v.toLocaleString('fr-FR',{minimumFractionDigits:digits,maximumFractionDigits:digits})}`}
+  function v8Compact(n){const v=Number(n)||0,a=Math.abs(v),sign=v>0?'+':v<0?'−':'';if(a>=1e6)return `${sign}${(a/1e6).toLocaleString('fr-FR',{maximumFractionDigits:1})}M`;if(a>=1e3)return `${sign}${(a/1e3).toLocaleString('fr-FR',{maximumFractionDigits:1})}k`;return `${sign}${a.toLocaleString('fr-FR',{maximumFractionDigits:a<10?2:0})}`}
+  function v8LocalKey(d){const x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`}
+
+  // ── Tuile KPI : 4e argument = tonalité (true = gain, false = perte) ──
+  metric=function(label,value,sub,positive){
+    const tone=arguments.length>=4?(positive?'up':'down'):'';
+    return `<div class="card metric-card"><div class="metric-top"><div class="card-label">${esc(label)}</div><span class="metric-icon">${v8Icon(v8MetricIcon(label))}</span></div><div class="card-value">${value}</div><div class="metric-change ${tone}">${esc(sub)}</div></div>`;
+  };
+
+  // ── Courbe (equity / drawdown) ──
+  lineChart=function(values,opts={}){
+    const vals=(Array.isArray(values)?values:[]).map(Number).filter(Number.isFinite);
+    if(!vals.length)return v8ChartPlaceholder(opts.empty||'Aucune donnée pour cette période.');
+    const data=[0,...vals],W=1000,H=240,pT=18,pB=18,min=Math.min(0,...data),max=Math.max(0,...data),span=(max-min)||1;
+    const x=i=>data.length===1?W/2:(i/(data.length-1))*W,y=v=>pT+(max-v)/span*(H-pT-pB);
+    let d=`M${x(0).toFixed(1)},${y(data[0]).toFixed(1)}`;
+    for(let i=1;i<data.length;i++){const x0=x(i-1),x1=x(i),mx=(x0+x1)/2;d+=` C${mx.toFixed(1)},${y(data[i-1]).toFixed(1)} ${mx.toFixed(1)},${y(data[i]).toFixed(1)} ${x1.toFixed(1)},${y(data[i]).toFixed(1)}`}
+    const last=data[data.length-1],isDD=vals.every(v=>v<=0)&&vals.some(v=>v<0),color=isDD||last<0?'var(--danger)':'var(--accent)',y0=y(0),id=`g${Math.random().toString(36).slice(2,8)}`;
+    const fmt=opts.format||(v=>v8Signed(v));
+    const grid=[.25,.5,.75].map(r=>`<line class="chart-grid-line" x1="0" x2="${W}" y1="${(pT+(H-pT-pB)*r).toFixed(1)}" y2="${(pT+(H-pT-pB)*r).toFixed(1)}"/>`).join('');
+    const zero=min<0&&max>0?`<line class="chart-zero-line" x1="0" x2="${W}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}"/>`:'';
+    return `<div class="chart" style="--chart-c:${color}"><div class="chart-plot" style="position:relative"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Courbe, dernière valeur ${esc(fmt(last))}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="${isDD?0:.32}"/><stop offset="1" stop-color="${color}" stop-opacity="${isDD?.28:0}"/></linearGradient></defs>${grid}${zero}<path class="chart-area" fill="url(#${id})" d="${d} L${x(data.length-1).toFixed(1)},${y0.toFixed(1)} L${x(0).toFixed(1)},${y0.toFixed(1)} Z"/><path class="chart-line draw" d="${d}"/></svg><span class="chart-last" style="left:${(x(data.length-1)/W*100).toFixed(2)}%;top:${(y(last)/H*100).toFixed(2)}%"><i></i><b>${esc(fmt(last))}</b></span></div><div class="chart-meta"><span>Plus haut ${esc(fmt(max))}</span><span>${vals.length} point${vals.length>1?'s':''}</span><span>Plus bas ${esc(fmt(min))}</span></div></div>`;
+  };
+  function v8ChartPlaceholder(text){
+    return `<div class="chart chart-placeholder"><div class="chart-plot" style="position:relative"><svg viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true">${[.25,.5,.75].map(r=>`<line class="chart-grid-line" x1="0" x2="1000" y1="${240*r}" y2="${240*r}"/>`).join('')}<path class="chart-line" d="M0,170 C120,170 140,120 250,130 C360,140 380,90 500,95 C620,100 640,60 750,70 C860,80 880,40 1000,45"/></svg></div><div class="chart-meta" style="justify-content:center"><span>${esc(text)}</span></div></div>`;
+  }
+  v62Chart=function(values,emptyText='Les données apparaîtront après vos premiers trades.',format){return lineChart(values,{empty:emptyText,format})};
+
+  // ── Barres gains / pertes ──
+  function v8Bars(items,emptyText){
+    if(!items.length)return `<div class="chart chart-placeholder"><div class="pnl-bars" aria-hidden="true">${[40,65,30,80,55,20,70,45].map(h=>`<div class="pnl-bar"><div class="pos-half"><i style="height:${h}%;background:rgba(255,255,255,.06);box-shadow:none"></i></div></div>`).join('')}</div><div class="chart-meta" style="justify-content:center"><span>${esc(emptyText)}</span></div></div>`;
+    const maxPos=Math.max(0,...items.map(x=>x.value)),maxNeg=Math.max(0,...items.map(x=>-x.value)),tot=(maxPos+maxNeg)||1,posFlex=maxPos/tot,negFlex=maxNeg/tot;
+    return `<div class="chart"><div class="pnl-bars">${items.map((x,i)=>{const v=x.value,hp=v>0&&maxPos?v/maxPos*100:0,hn=v<0&&maxNeg?(-v)/maxNeg*100:0;return `<div class="pnl-bar" title="${esc(x.title)}"><div class="pos-half" style="flex:${posFlex}">${hp?`<i style="height:${Math.max(3,hp).toFixed(1)}%;animation-delay:${i*25}ms"></i>`:''}</div><div class="neg-half" style="flex:${negFlex}">${hn?`<i style="height:${Math.max(3,hn).toFixed(1)}%;animation-delay:${i*25}ms"></i>`:''}</div></div>`}).join('')}</div><div class="chart-meta"><span>${esc(items[0].label||'')}</span><span>${items.length} élément${items.length>1?'s':''}</span><span>${esc(items[items.length-1].label||'')}</span></div></div>`;
+  }
+  v62BarChart=function(trades){
+    const c=v62Closed(trades).slice().sort((a,b)=>(v62Date(a.closedAt||a.openedAt)?.getTime()||0)-(v62Date(b.closedAt||b.openedAt)?.getTime()||0)).slice(-28);
+    return v8Bars(c.map(t=>{const p=v62TradePnl(t),cur=accountById(t.accountId)?.currency||t.currencySnapshot||'USD',d=v62Date(t.closedAt||t.openedAt);return {value:p,label:d?d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}):'',title:`${t.asset||'Trade'} · ${fmtMoney(p,cur)} · ${fmtR(v62TradeR(t))}`}}),'Les gains et pertes de vos trades clôturés apparaîtront ici.');
+  };
+  function v8MonthlyBars(trades,currency){
+    const map=new Map();for(const t of v62Closed(trades)){const d=v62Date(t.closedAt||t.openedAt);if(!d)continue;const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;map.set(k,(map.get(k)||0)+v62TradePnl(t))}
+    const rows=[...map.entries()].sort((a,b)=>a[0].localeCompare(b[0])).slice(-12);
+    return v8Bars(rows.map(([k,v])=>{const [yy,mm]=k.split('-');const label=new Date(Number(yy),Number(mm)-1,1).toLocaleDateString('fr-FR',{month:'short',year:'2-digit'});return {value:v,label,title:`${label} · ${fmtMoney(v,currency)}`}}),'Le PnL mensuel apparaîtra après vos premières clôtures.');
+  }
+
+  // ── Anneau win rate ──
+  function v8Ring(st){
+    const c=2*Math.PI*42,wr=st.closed?Math.max(0,Math.min(100,st.winRate)):0;
+    return `<div class="hero-ring-card"><div class="ring"><svg viewBox="0 0 100 100"><circle class="ring-track" cx="50" cy="50" r="42"/><circle class="ring-value" cx="50" cy="50" r="42" stroke-dasharray="${(c*wr/100).toFixed(1)} ${c.toFixed(1)}"/></svg><div><span><b>${st.closed?fmtPct(st.winRate):'—'}</b><small>Win rate</small></span></div></div><div class="ring-legend"><span><i style="background:var(--success)"></i>Gagnants<b>${st.wins}</b></span><span><i style="background:var(--danger)"></i>Perdants<b>${st.losses}</b></span><span><i style="background:var(--warning)"></i>Break-even<b>${st.be}</b></span><span><i style="background:var(--accent)"></i>Profit factor<b>${st.closed?(Number.isFinite(st.profitFactor)?st.profitFactor.toFixed(2):'∞'):'—'}</b></span></div></div>`;
+  }
+
+  // ── Calendrier de trading (PnL par jour, fuseau local) ──
+  let v8CalAnchor=new Date();
+  function v8Calendar(trades,ref,currency){
+    const y=ref.getFullYear(),m=ref.getMonth(),first=new Date(y,m,1),daysIn=new Date(y,m+1,0).getDate(),ws=weekStartIndex(),offset=(first.getDay()-ws+7)%7;
+    const map=new Map();for(const t of v62Closed(trades)){const d=v62Date(t.closedAt||t.openedAt);if(!d||d.getFullYear()!==y||d.getMonth()!==m)continue;const k=v8LocalKey(d),row=map.get(k)||{pnl:0,n:0};row.pnl+=v62TradePnl(t);row.n++;map.set(k,row)}
+    const maxAbs=Math.max(1,...[...map.values()].map(r=>Math.abs(r.pnl))),todayKey=v8LocalKey(new Date());
+    const names=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],head=Array.from({length:7},(_,i)=>names[(ws+i)%7]);
+    const cells=[];for(let i=0;i<offset;i++)cells.push('<div class="cal-day out"></div>');
+    let green=0,red=0,flat=0,total=0;
+    for(let dnum=1;dnum<=daysIn;dnum++){const k=`${y}-${String(m+1).padStart(2,'0')}-${String(dnum).padStart(2,'0')}`,r=map.get(k);let cls='',inner='';if(r){total+=r.pnl;if(r.pnl>0){cls='win';green++}else if(r.pnl<0){cls='loss';red++}else{cls='flat';flat++}inner=`<b>${v8Compact(r.pnl)}</b><small>${r.n} trade${r.n>1?'s':''}</small>`}cells.push(`<div class="cal-day ${cls} ${k===todayKey?'today':''}" style="--i:${r?(.14+.36*Math.abs(r.pnl)/maxAbs).toFixed(2):0}" ${r?`title="${esc(`${dnum}/${m+1} · ${fmtMoney(r.pnl,currency)} · ${r.n} trade${r.n>1?'s':''}`)}"`:''}><span>${dnum}</span>${inner}</div>`)}
+    while(cells.length%7)cells.push('<div class="cal-day out"></div>');
+    return `<div class="cal-head">${head.map(h=>`<span>${h}</span>`).join('')}</div><div class="cal-grid">${cells.join('')}</div><div class="cal-summary"><span>Jours verts <b class="up">${green}</b></span><span>Jours rouges <b class="down">${red}</b></span><span>Jours BE <b>${flat}</b></span><span>Total du mois <b class="${total>=0?'up':'down'}">${fmtMoney(total,currency)}</b></span></div>`;
+  }
+  function v8CalendarCard(trades,currency,idPrefix){
+    const title=v8CalAnchor.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    return `<section class="card cal-card"><div class="card-head"><div><div class="card-title">Calendrier de trading</div><div class="page-sub">PnL réalisé jour par jour · ${esc(title)}</div></div><div style="display:flex;gap:6px"><button class="icon-control" data-cal-nav="-1" aria-label="Mois précédent">${v8Icon('chevL')}</button><button class="icon-control" data-cal-nav="0" aria-label="Mois en cours" style="width:auto;padding:0 12px;font-size:12px;font-weight:700">Auj.</button><button class="icon-control" data-cal-nav="1" aria-label="Mois suivant">${v8Icon('chevR')}</button></div></div>${v8Calendar(trades,v8CalAnchor,currency)}</section>`;
+  }
+  function v8BindCalendar(el,rerender){$$('[data-cal-nav]',el).forEach(b=>b.onclick=()=>{const n=Number(b.dataset.calNav);v8CalAnchor=n===0?new Date():new Date(v8CalAnchor.getFullYear(),v8CalAnchor.getMonth()+n,1);rerender()})}
+
+  // ── Classement avec barre de contribution ──
+  function v8RankRows(rows,currency,emptyText='Pas encore de données.'){
+    if(!rows.length)return `<div class="quiet-empty">${esc(emptyText)}</div>`;
+    const max=Math.max(1,...rows.map(x=>Math.abs(x.pnl)));
+    return rows.map(x=>`<div class="analytics-rank-row"><span><b>${esc(x.key)}</b><small>${x.trades} trade${x.trades>1?'s':''} · WR ${fmtPct(x.winRate)}</small></span><strong class="${x.pnl>=0?'up':'down'}">${fmtMoney(x.pnl,currency)}</strong><span class="rank-bar"><i class="${x.pnl<0?'neg':''}" style="width:${(Math.abs(x.pnl)/max*100).toFixed(1)}%"></i></span></div>`).join('');
+  }
+
+  // ── Table des trades unifiée (Journal, Historique, Dashboard) ──
+  function v8TradeTable(list,{quality=false}={}){
+    const trades=v62Objects(list);if(!trades.length)return `<div class="quiet-empty"><strong>Aucun trade pour le moment.</strong><span>Les trades que vous enregistrez apparaîtront ici automatiquement.</span></div>`;
+    return `<div class="trade-table-wrap"><table class="trade-table"><thead><tr><th>Date</th><th>Actif</th><th>Sens</th><th>Compte</th><th>Statut</th><th>R</th><th>PnL</th>${quality?'<th>Qualité</th>':''}<th>Actions</th></tr></thead><tbody>${trades.map(t=>{
+      const a=accountById(t.accountId),d=v62Date(t.openedAt||t.closedAt),isOpen=String(t.status||'closed')==='open',r=v62TradeR(t),p=v62TradePnl(t),currency=a?.currency||t.currencySnapshot||'USD',res=isOpen?'open':r>0?'win':r<0?'loss':'be',resLabel={open:'En cours',win:'Gain',loss:'Perte',be:'Break-even'}[res],dateTxt=d?d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'}):'—',accName=a?.name||t.accountNameSnapshot||'Compte',dir=v62SafeText(t.direction),asset=v62SafeText(t.asset),corrected=(t.modifications||[]).some(m=>m?.type==='Correction post-clôture');
+      const actions=isOpen?`<button class="btn btn-accent-outline" data-trade-id="${esc(t.id||'')}">Gérer</button>`:`<div class="trade-row-actions"><button class="btn" data-trade-id="${esc(t.id||'')}">Voir</button><button class="btn btn-accent-outline" data-edit-closed-id="${esc(t.id||'')}">Modifier</button></div>`;
+      return `<tr><td class="cell-hide-sm" data-label="Date">${dateTxt}</td><td class="cell-asset"><div class="asset-cell"><span class="asset-badge">${esc(asset.slice(0,3))}</span><div><b>${esc(asset)}</b>${corrected?' <span class="pill warn" title="Trade corrigé après clôture">corrigé</span>':''}<small>${esc(strategyNameForTrade(t))}</small></div></div></td><td class="cell-hide-sm" data-label="Sens"><span class="pill ${dir==='BUY'?'success':dir==='SELL'?'danger':''}">${esc(dir)}</span></td><td class="cell-hide-sm" data-label="Compte">${esc(accName)}</td><td class="cell-hide-sm" data-label="Statut"><span class="status-dot ${res}">${resLabel}</span></td><td class="cell-hide-sm mono ${r>0?'up':r<0?'down':''}" data-label="R">${isOpen?'—':fmtR(r)}</td><td class="cell-pnl mono ${isOpen?'':p>0?'up':p<0?'down':''}" data-label="PnL">${isOpen?'<span class="status-dot open">Ouvert</span>':fmtMoney(p,currency)}</td>${quality?`<td class="cell-hide-sm" data-label="Qualité">${isOpen?'<span class="pill">En cours</span>':`<span class="pill ${t.quality==='good'?'success':t.quality==='bad'?'danger':''}">${qualityLabel(t.quality)}</span>`}</td>`:''}<td class="cell-meta"><span>${dateTxt}</span><span class="${dir==='BUY'?'up':'down'}">${esc(dir)}</span><span>${esc(accName)}</span><span class="status-dot ${res}">${resLabel}</span>${isOpen?'':`<span class="mono ${r>0?'up':r<0?'down':''}">${fmtR(r)}</span>`}</td><td class="cell-actions">${actions}</td></tr>`}).join('')}</tbody></table></div>`;
+  }
+  tradeRows=function(trades){return v8TradeTable(trades,{quality:true})};
+  v62TradeTable=function(list){return v8TradeTable(list)};
+
+  function v8OpenCards(open){
+    return `<div class="open-trade-grid">${open.map(t=>{const a=accountById(t.accountId),cur=a?.currency||t.currencySnapshot||'USD';return `<button class="open-trade-card" data-trade-id="${esc(t.id)}"><span class="open-trade-top"><b>${esc(t.asset)}</b><span class="pill ${t.direction==='BUY'?'success':'danger'}">${esc(t.direction)}</span></span><span>${esc(a?.name||t.accountNameSnapshot||'Compte')}</span><div class="open-trade-meta"><small>Risque ${fmtMoney(t.riskUSD||0,cur)}</small><small>${Number(t.plannedRR||0)>0?'R:R 1:'+Number(t.plannedRR).toFixed(2):'R:R libre'}</small><small>${Number(t.remainingPct??100)}% restant</small></div><strong>${fmtMoney(t.realizedPnl||0,cur)}</strong><small>Entrée ${esc(t.entry)} · SL ${esc(t.sl)} · TP ${esc(t.tp??'libre')}</small></button>`}).join('')}</div>`;
+  }
+
+  // ── TABLEAU DE BORD V8 ──
+  renderDashboard=function(){
+    const el=$('#view-dashboard');if(!el)return;
+    const accounts=v62CoreAccounts(),periodTrades=v62PeriodTrades(dashboardPeriod),st=v62Stats(periodTrades,accounts.reduce((s,a)=>s+v62Number(a.initialBalance),0)),open=v62Trades().filter(t=>String(t.status)==='open'),currency=accounts[0]?.currency||'USD',series=v62EquitySeries(periodTrades),dd=v62DrawdownSeries(periodTrades),recent=v62Trades().slice().sort((a,b)=>(v62Date(b.openedAt)?.getTime()||0)-(v62Date(a.openedAt)?.getTime()||0)).slice(0,7),byAsset=v62Breakdown(periodTrades,t=>t.asset).slice(0,6),action=nextAction();
+    const h=new Date().getHours(),greet=h<5?'Bonne nuit':h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir',money=v=>`${v8Signed(v)} ${currency}`,pf=st.closed?(Number.isFinite(st.profitFactor)?st.profitFactor.toFixed(2):(st.profitFactor===Infinity?'∞':'—')):'—';
+    el.innerHTML=`
+      <section class="hero">
+        <div class="hero-main">
+          <span class="eyebrow">BOSCOFX · ${esc(new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))}</span>
+          <h1 class="hero-greeting">${esc(greet)}, ${esc(displayName())}.<br><em>Votre trading en chiffres.</em></h1>
+          <div class="hero-capital"><span>Capital total · ${accounts.length} comptes</span><strong>${esc(totalBalanceLabel())}</strong>
+            <div class="hero-chips">
+              <span class="hero-chip"><small>PnL ${esc(periodLabel(dashboardPeriod).toLowerCase())}</small><span class="${st.pnl>=0?'up':'down'}">${esc(money(st.pnl))}</span></span>
+              <span class="hero-chip"><small>Résultat</small><span class="${st.totalR>=0?'up':'down'}">${fmtR(st.totalR)}</span></span>
+              <span class="hero-chip"><small>Trades</small>${st.closed}</span>
+              <span class="hero-chip"><small>Ouverts</small>${open.length}</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-side">
+          ${v8Ring(st)}
+          <button class="hero-next" id="dashboard-next-action"><span>PROCHAINE ACTION</span><strong>${esc(action.title)}</strong><small>${esc(action.sub)}</small></button>
+          <div class="hero-cta"><button class="btn btn-primary" id="dash-new-trade">${v8Icon('plus')}Nouveau trade</button><button class="btn btn-ghost" id="dash-journal">Journal ${v8Icon('arrow')}</button></div>
+        </div>
+      </section>
+      <div class="analytics-toolbar card"><div><span class="eyebrow">Période analysée</span><strong>${esc(periodLabel(dashboardPeriod))}</strong></div>${periodTabs(dashboardPeriod,'data-dashboard-period')}</div>
+      <div class="grid metric-grid metric-grid-8">
+        ${metric('PnL période',fmtMoney(st.pnl,currency),fmtR(st.totalR),st.pnl>=0)}
+        ${metric('Win rate',st.closed?fmtPct(st.winRate):'—',`${st.wins} G · ${st.losses} P · ${st.be} BE`)}
+        ${metric('Profit factor',pf,'Gains bruts / pertes brutes')}
+        ${metric('Espérance',st.closed?fmtR(st.expectancyR):'—','Par trade')}
+        ${metric('Drawdown max',st.closed?fmtPct(Math.abs(st.maxDrawdownPct)):'—',st.closed?fmtMoney(st.maxDrawdown,currency):'—',false)}
+        ${metric('Payoff',st.closed&&st.payoffR?st.payoffR.toFixed(2):'—',st.closed?`${fmtR(st.avgWinR)} / ${fmtR(-st.avgLossR)}`:'Gain moyen / perte moyenne')}
+        ${metric('Risque moyen',st.closed?fmtMoney(st.avgRisk,currency):'—','Par position')}
+        ${metric('Trades',String(st.closed),`${open.length} en cours · série max ${st.bestWinStreak}G / ${st.worstLossStreak}P`)}
+      </div>
+      ${open.length?`<section class="card open-trades-board"><div class="card-head"><div><div class="eyebrow">En direct</div><div class="card-title">${open.length} position${open.length>1?'s':''} ouverte${open.length>1?'s':''}</div></div><button class="btn btn-ghost" id="dash-open-journal">Gérer ${v8Icon('arrow')}</button></div>${v8OpenCards(open)}</section>`:''}
+      <div class="dashboard-visual-grid">
+        <section class="card"><div class="card-head"><div><div class="card-title">Courbe de progression</div><div class="page-sub">PnL cumulé · tous comptes</div></div><span class="pill gold">${esc(periodLabel(dashboardPeriod))}</span></div>${v62Chart(series,'Votre courbe se construira avec vos trades clôturés.',money)}<div class="stat-line"><span><b>${st.closed?fmtR(st.avgWinR):'—'}</b>gain moyen</span><span><b>${st.closed?fmtR(-st.avgLossR):'—'}</b>perte moyenne</span><span><b>${st.bestTrade?fmtMoney(v62TradePnl(st.bestTrade),currency):'—'}</b>meilleur trade</span><span><b>${st.worstTrade?fmtMoney(v62TradePnl(st.worstTrade),currency):'—'}</b>pire trade</span></div></section>
+        <section class="card"><div class="card-head"><div><div class="card-title">Gains / pertes</div><div class="page-sub">Chaque barre = un trade clôturé</div></div></div>${v62BarChart(periodTrades)}</section>
+      </div>
+      <div class="dashboard-visual-grid">
+        ${v8CalendarCard(v62Trades(),currency)}
+        <section class="card"><div class="card-head"><div><div class="card-title">Drawdown</div><div class="page-sub">Repli depuis le dernier sommet</div></div><span class="pill danger">${st.closed?fmtPct(Math.abs(st.maxDrawdownPct)):'—'}</span></div>${v62Chart(dd,'Le drawdown apparaîtra après vos premiers trades.',money)}</section>
+      </div>
+      <div class="dashboard-secondary">
+        <section class="card"><div class="card-head"><div><div class="card-title">Vos comptes</div><div class="page-sub">Deriv · JustMarkets · FundedNext — ${esc(periodLabel(dashboardPeriod).toLowerCase())}</div></div><button class="btn btn-ghost" id="dash-accounts">Analyser ${v8Icon('arrow')}</button></div><div class="account-performance-list">${accounts.map(a=>{const x=v62Stats(periodTrades.filter(t=>t.accountId===a.id),a.initialBalance);return `<button class="account-performance-row" data-dash-account="${a.id}"><span class="account-dot" style="background:${esc(a.color)};color:${esc(a.color)}"></span><span><b>${esc(a.name)}</b><small>${esc(accountMarketLabel(a))} · solde ${fmtMoney(a.balance,a.currency)}</small></span><span class="mono ${x.pnl>=0?'up':'down'}">${fmtMoney(x.pnl,a.currency)}</span><span class="mono">${x.closed?fmtPct(x.winRate):'—'}</span></button>`}).join('')}</div></section>
+        <section class="card"><div class="card-head"><div><div class="card-title">Performance par actif</div><div class="page-sub">Ce qui contribue réellement à vos résultats</div></div><button class="btn btn-ghost" id="dash-stats">Statistiques ${v8Icon('arrow')}</button></div>${v8RankRows(byAsset,currency,'BTCUSD, GBPJPY, XAUUSD, US30 et vos synthétiques seront analysés ici.')}</section>
+      </div>
+      <section class="card"><div class="card-head"><div><div class="card-title">Derniers trades</div><div class="page-sub">Tous comptes confondus</div></div><button class="btn btn-ghost" id="dash-all-trades">Voir le journal ${v8Icon('arrow')}</button></div>${v8TradeTable(recent)}</section>`;
+    $$('[data-dashboard-period]',el).forEach(b=>b.onclick=()=>{dashboardPeriod=b.dataset.dashboardPeriod;renderDashboard()});
+    $('#dash-new-trade',el)?.addEventListener('click',openNewTrade);
+    ['#dash-all-trades','#dash-journal','#dash-open-journal'].forEach(s=>$(s,el)?.addEventListener('click',()=>setView('journal')));
+    $('#dash-accounts',el)?.addEventListener('click',()=>setView('accounts'));$('#dash-stats',el)?.addEventListener('click',()=>setView('productivity'));
+    $('#dashboard-next-action',el)?.addEventListener('click',()=>action.action==='new-trade'?openNewTrade():setView(action.action));
+    $$('[data-dash-account]',el).forEach(b=>b.onclick=()=>{selectedAccountId=b.dataset.dashAccount;setView('accounts')});
+    $$('[data-trade-id]',el).forEach(b=>b.onclick=()=>b.dataset.tradeId&&openTradeDetails(b.dataset.tradeId));
+    $$('[data-edit-closed-id]',el).forEach(b=>b.onclick=e=>{e.stopPropagation();b.dataset.editClosedId&&openClosedTradeEditModal(b.dataset.editClosedId)});
+    v8BindCalendar(el,renderDashboard);
+  };
+
+  // ── Comptes : couleur propre à chaque carte ──
+  const v62RenderAccounts=renderAccounts;
+  renderAccounts=function(){
+    v62RenderAccounts();
+    const el=$('#view-accounts');if(!el)return;
+    $$('.account-card',el).forEach(card=>{const id=card.querySelector('[data-edit-account]')?.dataset.editAccount,a=accountById(id);if(a?.color){card.style.setProperty('--acc',a.color);card.style.setProperty('--acc-glow',`${a.color}22`)}const dot=card.querySelector('.account-dot');if(dot&&a?.color)dot.style.color=a.color});
+    const chart=$('.account-analytics',el);if(chart&&!$('.pnl-bars',chart)){const selected=accountById(selectedAccountId);if(selected){const trades=v62PeriodTrades(accountAnalyticsPeriod,selected.id);chart.insertAdjacentHTML('beforeend',`<div class="section-label">Gains / pertes du compte</div>${v62BarChart(trades)}`)}}
+  };
+
+  // ── Statistiques : analyses complémentaires (jour, session, mois, calendrier) ──
+  const v62RenderProductivity=renderProductivity;
+  renderProductivity=function(){
+    v62RenderProductivity();
+    const el=$('#view-productivity');if(!el)return;
+    const accounts=v62CoreAccounts();let trades=v62PeriodTrades(productivityPeriod,productivityAccount);if(productivityStrategy!=='all')trades=trades.filter(t=>t.strategyId===productivityStrategy);if(productivityAsset!=='all')trades=trades.filter(t=>t.asset===productivityAsset);
+    const currency=productivityAccount==='all'?(accounts[0]?.currency||'USD'):(accountById(productivityAccount)?.currency||'USD');
+    const days=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const byDay=v62Breakdown(trades,t=>{const d=v62Date(t.openedAt||t.closedAt);return d?days[d.getDay()]:'Non renseigné'});
+    const bySession=v62Breakdown(trades,t=>t.session||'Non renseignée');
+    let allScope=v62Trades();if(productivityAccount!=='all')allScope=allScope.filter(t=>t.accountId===productivityAccount);if(productivityStrategy!=='all')allScope=allScope.filter(t=>t.strategyId===productivityStrategy);if(productivityAsset!=='all')allScope=allScope.filter(t=>t.asset===productivityAsset);
+    el.insertAdjacentHTML('beforeend',`<div class="two-col"><section class="card"><div class="card-title">Par jour de la semaine</div>${v8RankRows(byDay,currency)}</section><section class="card"><div class="card-title">Par session</div>${v8RankRows(bySession,currency)}</section></div>
+      <div class="dashboard-visual-grid stats-bottom" style="margin-top:var(--s4)"><section class="card"><div class="card-head"><div><div class="card-title">PnL mensuel</div><div class="page-sub">12 derniers mois avec activité · filtres appliqués</div></div></div>${v8MonthlyBars(allScope,currency)}</section>${v8CalendarCard(allScope,currency)}</div>`);
+    // Barres de contribution sur les classements existants
+    $$('.analytics-three-col .card, .two-col .card',el).forEach(card=>{const rows=$$('.analytics-rank-row',card).filter(r=>!r.querySelector('.rank-bar'));if(!rows.length)return;const vals=rows.map(r=>num((r.querySelector('strong')?.textContent||'0').replace(/[^\d,.\-−]/g,'').replace('−','-')));const max=Math.max(1,...vals.map(v=>Math.abs(v||0)));rows.forEach((r,i)=>r.insertAdjacentHTML('beforeend',`<span class="rank-bar"><i class="${vals[i]<0?'neg':''}" style="width:${(Math.abs(vals[i]||0)/max*100).toFixed(1)}%"></i></span>`))});
+    v8BindCalendar(el,renderProductivity);
+  };
+
+  // ── Détail d'un trade : historique des corrections post-clôture ──
+  const v71OpenTradeDetails=openTradeDetails;
+  openTradeDetails=function(id){
+    v71OpenTradeDetails(id);
+    const t=state.trades.find(x=>x.id===id);if(!t)return;
+    const corrections=(t.modifications||[]).filter(m=>m?.type==='Correction post-clôture');
+    if(!corrections.length)return;
+    const cur=accountById(t.accountId)?.currency||t.currencySnapshot||'USD',footer=$('#modal .modal-footer');
+    footer?.insertAdjacentHTML('beforebegin',`<div class="section-label">Corrections après clôture</div>${corrections.map(c=>`<div class="correction-log"><b>${fmtDateTime(c.at)}</b> · ${esc(c.note||'Correction')}<br>Avant : ${fmtMoney(c.before?.pnl,cur)} · ${fmtR(c.before?.resultR)} → Après : ${fmtMoney(c.after?.pnl,cur)} · ${fmtR(c.after?.resultR)}</div>`).join('')}`);
+  };
+
+  // ── Navigation mobile ──
+  $('#dock-new-trade')?.addEventListener('click',()=>openNewTrade());
+  $('#dock-menu')?.addEventListener('click',()=>$('#sidebar')?.classList.add('mobile-open'));
+  $('#sidebar-scrim')?.addEventListener('click',()=>$('#sidebar')?.classList.remove('mobile-open'));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#sidebar')?.classList.remove('mobile-open')});
 
   function finishLaunch(){setTimeout(()=>$('#launch-screen')?.classList.add('leaving'),1000);setTimeout(()=>{const x=$('#launch-screen');if(x)x.style.display='none'},1500)}
   async function boot(){

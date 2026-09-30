@@ -20,9 +20,9 @@ if missing: raise SystemExit('Missing: '+', '.join(missing))
 html=Path('index.html').read_text()
 css=Path('src/styles.css').read_text()
 workflow=Path('.github/workflows/deploy-pages.yml').read_text()
-for token in ['styles.css?v=7.1.0','main.js?v=7.1.0','boscofx-trader-bg.webp']:
+for token in ['styles.css?v=8.0.0','main.js?v=8.0.0','sw.js?v=8.0.0','boscofx-trader-bg.webp']:
     if token not in html and token not in css:
-        raise SystemExit(f'Missing V7 asset/version token: {token}')
+        raise SystemExit(f'Missing V8 asset/version token: {token}')
 for token in ['manifest.webmanifest','sw.js','assets/.','_site/config.js','SUPABASE_URL','SUPABASE_ANON_KEY']:
     if token not in workflow:
         raise SystemExit(f'GitHub Pages workflow misses asset: {token}')
@@ -35,7 +35,7 @@ for forbidden in ['hhh','bbb','hhb','bbh']:
 source=Path('src/main.js').read_text()
 if 'maxDrawdown:maxDD,maxDrawdownPct,' in source:
     raise SystemExit('Runtime bug detected: maxDrawdownPct must map to maxDDPct explicitly')
-for required_token in ['maxDrawdownPct:maxDDPct','function v62Stats','function statsFor','function openNewTrade','function openCloseTradeModal','function openClosedTradeEditModal','strat_mm20_sr_m5','byConfirmation=v62Breakdown']:
+for required_token in ['maxDrawdownPct:maxDDPct','function v62Stats','function statsFor','function openNewTrade','function openCloseTradeModal','function openClosedTradeEditModal','strat_mm20_sr_m5','byConfirmation=v62Breakdown','function v8TradeTable','const accounts=state.accounts.slice(),strategies=']:
     if required_token not in source:
         raise SystemExit(f'Missing runtime invariant: {required_token}')
 print('ALTITUDE Trade: files/runtime checks OK')

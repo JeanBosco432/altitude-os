@@ -1,3 +1,28 @@
+# ALTITUDE Trade V8.0 — « Gold Terminal » (2026-09-30)
+
+## Refonte visuelle complète
+- Nouveau design system BOSCOFX : obsidienne, verre dépoli, dégradés or, typographie éditoriale (Instrument Serif) + chiffres tabulaires.
+- Fond BOSCOFX fixe et animé derrière **toutes** les pages, avec voile de lisibilité ; visible aussi dans la sidebar, le profil, les stratégies et les aperçus de thème.
+- Nouvelle vitrine / page de connexion plein écran : accroche, 4 atouts, badges, carte de connexion en verre.
+- Nouveau tableau de bord : bandeau héros BOSCOFX (capital total, PnL, R, trades), anneau win rate, prochaine action, positions ouvertes en direct.
+- Graphiques redessinés : courbe equity/drawdown lissée avec point de dernière valeur, barres gains/pertes positives/négatives, calendrier de trading mensuel (PnL par jour), PnL mensuel.
+- Statistiques enrichies : par jour de semaine, par session, barres de contribution, PnL mensuel et calendrier filtrés.
+- Table des trades unifiée (Dashboard, Journal, Historique) : badge actif, statut coloré, badge « corrigé », boutons Voir / Modifier toujours visibles.
+- Icônes SVG, sidebar sectionnée (Pilotage / Trading / Progression), barre de titre mobile.
+- Mobile : barre de navigation flottante (Accueil, Journal, +, Stats, Menu), tableaux convertis en cartes, modales en « bottom sheet ».
+- 5 thèmes revus (Midnight or, Obsidian, Summit bronze, Glacier, Carbon platine), tous sur fond BOSCOFX.
+
+## Corrections
+- **Correction post-clôture** : la liste « Compte » ne proposait que le compte principal. Enregistrer une correction déplaçait donc le trade (ex. US30 FundedNext → Deriv) et faussait les soldes. Tous les comptes sont maintenant proposés et le compte d'origine est présélectionné.
+- La stratégie archivée d'un trade reste sélectionnée lors d'une correction.
+- Nouveau trade : la session « Synthétique » n'est plus conservée quand on passe d'un compte Deriv à un compte Forex/Prop.
+- Le détail d'un trade affiche l'historique des corrections (avant / après).
+- Le menu mobile se ferme après navigation jusqu'à 980 px (au lieu de 620 px).
+
+## Technique
+- Assets versionnés 8.0.0, cache service worker `altitude-trade-v8-0-shell`.
+- Aucune modification du modèle de données, de Supabase, ni de `config.js`.
+
 # ALTITUDE Trade V7.0.1 — GitHub Pages hotfix
 
 - Corrige l'échec GitHub Actions `Missing: config.js`.

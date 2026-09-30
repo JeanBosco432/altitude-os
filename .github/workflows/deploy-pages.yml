@@ -1,4 +1,4 @@
-name: Deploy ALTITUDE Trade V7 to GitHub Pages
+name: Deploy ALTITUDE Trade V8 to GitHub Pages
 
 on:
   push:
