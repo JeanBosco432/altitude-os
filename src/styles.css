@@ -893,3 +893,52 @@ input[type="checkbox"]:checked::after{content:"";width:10px;height:6px;border-le
 @media (min-width:981px) and (max-height:760px){.sidebar-motto{display:none}}
 .nav-item.active{background:linear-gradient(90deg,var(--accent-soft),transparent)}
 .metric-icon{border-color:var(--accent-line)}
+
+/* ───────── 19. V8.1 · SYNCHRONISATION METATRADER 5 ───────── */
+.pill.src{height:20px;padding:0 7px;font-size:9.5px;letter-spacing:.1em;color:#9fd0ff;border-color:rgba(90,169,255,.35);background:rgba(90,169,255,.1)}
+.trade-table td .pill{height:20px;padding:0 7px;font-size:9.5px;margin-left:4px}
+.src-chip{border-color:rgba(90,169,255,.35)!important;color:#9fd0ff!important;background:rgba(90,169,255,.1)!important}
+.settings-sections>.mt5-card{grid-column:1/-1}
+.mt5-card .card-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sync-note{margin:4px 0 8px;padding:14px 16px;border-radius:var(--r-md);border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--text-2);font-size:13px;line-height:1.6}
+.sync-note b{color:var(--text)}
+.sync-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:step}
+.sync-steps li{counter-increment:step;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px;padding:14px 16px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--glass-3)}
+.sync-steps li::before{content:counter(step);width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:var(--gold-grad);color:var(--accent-ink);font-weight:800;font-size:13px}
+.sync-steps li>div:first-of-type{display:flex;flex-direction:column;gap:3px;min-width:0}
+.sync-steps li>div:first-of-type span{color:var(--text-3);font-size:12.5px;line-height:1.5}
+.sync-steps li:last-child{grid-template-columns:auto minmax(0,1fr)}
+.copy-field{display:flex;gap:8px;min-width:0}
+.copy-field input{flex:1;min-width:0;height:44px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line-strong);background:rgba(0,0,0,.4);font:500 12px var(--font-mono);color:var(--accent-3)}
+.copy-field.sm{width:min(420px,100%)}
+.copy-field .btn{flex:none}
+.mt5-tokens{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.mt5-token{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:10px 14px;border-radius:var(--r-sm);border:1px solid var(--line);background:rgba(0,0,0,.2)}
+.mt5-token small{color:var(--text-3);font-size:12px}
+.mt5-token .btn{min-height:32px;padding:0 12px;font-size:12px}
+.mt5-account{display:grid;grid-template-columns:minmax(0,1.4fr) auto minmax(0,1.2fr);align-items:center;gap:16px;padding:14px 16px;margin-bottom:8px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--glass-3)}
+.mt5-account-id{display:flex;align-items:center;gap:12px;min-width:0}
+.mt5-account-id>div{display:flex;flex-direction:column;min-width:0}
+.mt5-account-id b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt5-account-id small,.mt5-account-bal span{color:var(--text-3);font-size:11.5px}
+.mt5-account-bal{display:flex;flex-direction:column;gap:2px}
+.mt5-account-map{display:flex;gap:8px;flex-wrap:wrap}
+.mt5-account-map select{flex:1;min-width:180px;height:42px;padding:0 14px;border-radius:var(--r-sm);border:1px solid var(--line-strong);background-color:rgba(0,0,0,.34);color:var(--text);font-size:13px}
+.live-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--text-3)}
+.live-dot.on{background:var(--success);box-shadow:0 0 0 4px rgba(47,211,160,.18);animation:pulseLive 1.8s infinite}
+.sync-meta{margin-top:10px;color:var(--text-3);font-size:12px}
+.mt5-fallback{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 16px;margin-bottom:8px;border-radius:var(--r-md);border:1px dashed var(--line-strong)}
+.mt5-fallback>div{display:flex;flex-direction:column;gap:3px}
+.mt5-fallback span{color:var(--text-3);font-size:12.5px}
+.enrich-banner{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:18px 22px;margin-bottom:var(--s4);border-radius:var(--r-lg);border:1px solid var(--accent-line);background:linear-gradient(110deg,rgba(243,189,85,.16),rgba(243,189,85,.03) 60%),var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);overflow:hidden}
+.enrich-banner>div{display:flex;flex-direction:column;gap:3px}
+.enrich-banner strong{font-size:17px}
+.enrich-banner small{color:var(--text-2)}
+.enrich-facts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.enrich-facts>div{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--glass-3);min-width:0}
+.enrich-facts span{color:var(--text-3);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.enrich-facts b{font:600 13.5px var(--font-mono);overflow-wrap:anywhere}
+.modal-title .pill{font-family:var(--font-ui);vertical-align:middle;margin-left:6px}
+@media (max-width:980px){.enrich-facts{grid-template-columns:repeat(3,minmax(0,1fr))}.mt5-account{grid-template-columns:1fr auto}.mt5-account-map{grid-column:1/-1}}
+@media (max-width:760px){.sync-steps li{grid-template-columns:auto minmax(0,1fr)}.sync-steps li>:last-child:not(div:first-of-type){grid-column:1/-1}.sync-steps li>.btn,.sync-steps li>.copy-field{grid-column:1/-1;width:100%}.enrich-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.mt5-token{grid-template-columns:1fr auto}.mt5-token small{grid-column:1/-1;grid-row:2}}
+a.btn{text-decoration:none}

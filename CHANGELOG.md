@@ -1,3 +1,17 @@
+# ALTITUDE Trade V8.1 — Synchronisation MetaTrader 5 (2026-09-30)
+
+## Nouveau
+- **EA MT5 `mt5/AltitudeSync.mq5`** (lecture seule, aucun ordre) : envoie chaque position clôturée avec heures UTC, prix, SL/TP initiaux, volume, commission, swap, PnL net et **risque réel** (calculé par MT5 depuis le SL initial).
+- **Edge Function `mt5-ingest`** authentifiée par jeton (hash SHA-256 uniquement), anti-doublon par position.
+- **Tables `sync_tokens`, `broker_inbox`, `broker_accounts`** avec RLS (`supabase/mt5-sync.sql`).
+- **Synchronisation automatique** toutes les 45 s et à l'ouverture de l'app.
+- **Rapprochement intelligent** : un trade ouvert à la main est clôturé avec les chiffres MT5 ; un trade déjà clôturé est relié (badge « écart MT5 » + « Aligner sur MT5 » si le PnL diffère). Jamais de doublon.
+- **Trades « à compléter »** : bannière Journal + formulaire rapide (stratégie, confirmation, contexte, session, qualité, risque).
+- **Paramètres → Connexion MetaTrader 5** : jetons (création / révocation), téléchargement de l'EA, comptes détectés avec solde réel, association automatique JustMarkets / FundedNext / Deriv, import de l'historique.
+- **Import d'un rapport MT5 HTML** (secours, fonctionne aussi en démo) avec calcul du risque depuis le SL initial.
+- Badges `MT5`, `à compléter`, `écart MT5` dans toutes les tables.
+- Guide pas à pas : `docs/MT5-SYNC.md`.
+
 # ALTITUDE Trade V8.0 — « Gold Terminal » (2026-09-30)
 
 ## Refonte visuelle complète

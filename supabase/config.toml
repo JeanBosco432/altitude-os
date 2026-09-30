@@ -1,2 +1,6 @@
 [functions.stripe-webhook]
 verify_jwt = false
+
+# EA MetaTrader 5 : authentifié par le jeton x-altitude-token, pas par un JWT Supabase.
+[functions.mt5-ingest]
+verify_jwt = false

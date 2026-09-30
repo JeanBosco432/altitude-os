@@ -1063,7 +1063,7 @@
     return `<div class="trade-table-wrap"><table class="trade-table"><thead><tr><th>Date</th><th>Actif</th><th>Sens</th><th>Compte</th><th>Statut</th><th>R</th><th>PnL</th>${quality?'<th>Qualité</th>':''}<th>Actions</th></tr></thead><tbody>${trades.map(t=>{
       const a=accountById(t.accountId),d=v62Date(t.openedAt||t.closedAt),isOpen=String(t.status||'closed')==='open',r=v62TradeR(t),p=v62TradePnl(t),currency=a?.currency||t.currencySnapshot||'USD',res=isOpen?'open':r>0?'win':r<0?'loss':'be',resLabel={open:'En cours',win:'Gain',loss:'Perte',be:'Break-even'}[res],dateTxt=d?d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'}):'—',accName=a?.name||t.accountNameSnapshot||'Compte',dir=v62SafeText(t.direction),asset=v62SafeText(t.asset),corrected=(t.modifications||[]).some(m=>m?.type==='Correction post-clôture');
       const actions=isOpen?`<button class="btn btn-accent-outline" data-trade-id="${esc(t.id||'')}">Gérer</button>`:`<div class="trade-row-actions"><button class="btn" data-trade-id="${esc(t.id||'')}">Voir</button><button class="btn btn-accent-outline" data-edit-closed-id="${esc(t.id||'')}">Modifier</button></div>`;
-      return `<tr><td class="cell-hide-sm" data-label="Date">${dateTxt}</td><td class="cell-asset"><div class="asset-cell"><span class="asset-badge">${esc(asset.slice(0,3))}</span><div><b>${esc(asset)}</b>${corrected?' <span class="pill warn" title="Trade corrigé après clôture">corrigé</span>':''}<small>${esc(strategyNameForTrade(t))}</small></div></div></td><td class="cell-hide-sm" data-label="Sens"><span class="pill ${dir==='BUY'?'success':dir==='SELL'?'danger':''}">${esc(dir)}</span></td><td class="cell-hide-sm" data-label="Compte">${esc(accName)}</td><td class="cell-hide-sm" data-label="Statut"><span class="status-dot ${res}">${resLabel}</span></td><td class="cell-hide-sm mono ${r>0?'up':r<0?'down':''}" data-label="R">${isOpen?'—':fmtR(r)}</td><td class="cell-pnl mono ${isOpen?'':p>0?'up':p<0?'down':''}" data-label="PnL">${isOpen?'<span class="status-dot open">Ouvert</span>':fmtMoney(p,currency)}</td>${quality?`<td class="cell-hide-sm" data-label="Qualité">${isOpen?'<span class="pill">En cours</span>':`<span class="pill ${t.quality==='good'?'success':t.quality==='bad'?'danger':''}">${qualityLabel(t.quality)}</span>`}</td>`:''}<td class="cell-meta"><span>${dateTxt}</span><span class="${dir==='BUY'?'up':'down'}">${esc(dir)}</span><span>${esc(accName)}</span><span class="status-dot ${res}">${resLabel}</span>${isOpen?'':`<span class="mono ${r>0?'up':r<0?'down':''}">${fmtR(r)}</span>`}</td><td class="cell-actions">${actions}</td></tr>`}).join('')}</tbody></table></div>`;
+      return `<tr><td class="cell-hide-sm" data-label="Date">${dateTxt}</td><td class="cell-asset"><div class="asset-cell"><span class="asset-badge">${esc(asset.slice(0,3))}</span><div><b>${esc(asset)}</b>${corrected?' <span class="pill warn" title="Trade corrigé après clôture">corrigé</span>':''}${t.externalId?' <span class="pill src" title="Synchronisé avec MetaTrader 5">MT5</span>':''}${t.needsEnrichment?' <span class="pill gold" title="Stratégie et confirmation à renseigner">à compléter</span>':''}${t.mt5Mismatch?' <span class="pill danger" title="Le PnL diffère de MetaTrader 5">écart MT5</span>':''}<small>${esc(strategyNameForTrade(t))}</small></div></div></td><td class="cell-hide-sm" data-label="Sens"><span class="pill ${dir==='BUY'?'success':dir==='SELL'?'danger':''}">${esc(dir)}</span></td><td class="cell-hide-sm" data-label="Compte">${esc(accName)}</td><td class="cell-hide-sm" data-label="Statut"><span class="status-dot ${res}">${resLabel}</span></td><td class="cell-hide-sm mono ${r>0?'up':r<0?'down':''}" data-label="R">${isOpen?'—':fmtR(r)}</td><td class="cell-pnl mono ${isOpen?'':p>0?'up':p<0?'down':''}" data-label="PnL">${isOpen?'<span class="status-dot open">Ouvert</span>':fmtMoney(p,currency)}</td>${quality?`<td class="cell-hide-sm" data-label="Qualité">${isOpen?'<span class="pill">En cours</span>':`<span class="pill ${t.quality==='good'?'success':t.quality==='bad'?'danger':''}">${qualityLabel(t.quality)}</span>`}</td>`:''}<td class="cell-meta"><span>${dateTxt}</span><span class="${dir==='BUY'?'up':'down'}">${esc(dir)}</span><span>${esc(accName)}</span><span class="status-dot ${res}">${resLabel}</span>${isOpen?'':`<span class="mono ${r>0?'up':r<0?'down':''}">${fmtR(r)}</span>`}</td><td class="cell-actions">${actions}</td></tr>`}).join('')}</tbody></table></div>`;
   }
   tradeRows=function(trades){return v8TradeTable(trades,{quality:true})};
   v62TradeTable=function(list){return v8TradeTable(list)};
@@ -1176,6 +1176,324 @@
   $('#dock-menu')?.addEventListener('click',()=>$('#sidebar')?.classList.add('mobile-open'));
   $('#sidebar-scrim')?.addEventListener('click',()=>$('#sidebar')?.classList.remove('mobile-open'));
   document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#sidebar')?.classList.remove('mobile-open')});
+
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ALTITUDE Trade V8.1 — Synchronisation MetaTrader 5
+  // L'EA « AltitudeSync » envoie chaque position clôturée à l'Edge Function
+  // mt5-ingest (table broker_inbox). ALTITUDE la récupère, la rapproche d'un
+  // trade déjà saisi à la main ou crée le trade, puis le met « à compléter ».
+  // Règle d'or : une position MT5 = un seul trade (clé externalId).
+  // ═══════════════════════════════════════════════════════════════════
+
+  const MT5_ENDPOINT=SUPABASE_URL?`${SUPABASE_URL.replace(/\/$/,'')}/functions/v1/mt5-ingest`:'';
+  const MT5_MATCH_WINDOW_MIN=20;
+  let brokerAccountsCache=[],brokerTokensCache=[],brokerSyncing=false,brokerLastSync=null,brokerSyncError=null,brokerPollTimer=null,brokerLastSummary=null,brokerPendingHistory={};
+
+  function brokerLinks(){if(!Array.isArray(state.brokerLinks))state.brokerLinks=[];return state.brokerLinks}
+  function brokerIgnored(){if(!Array.isArray(state.brokerIgnored))state.brokerIgnored=[];return state.brokerIgnored}
+  function brokerKey(login,id){return `mt5:${String(login)}:${String(id)}`}
+  function brokerLinkFor(login){return brokerLinks().find(l=>l.source==='mt5'&&String(l.login)===String(login))}
+  function mt5GuessAccountId(company='',server=''){
+    const s=`${company} ${server}`.toLowerCase();
+    if(s.includes('fundednext'))return 'acc_fundednext';
+    if(s.includes('justmarkets')||s.includes('just global')||s.includes('justforex'))return 'acc_justmarkets';
+    if(s.includes('deriv'))return 'acc_deriv';
+    return '';
+  }
+  function mt5NormalizeSymbol(raw){
+    const s=String(raw||'').trim();if(!s)return '';
+    const low=s.toLowerCase();
+    let m=low.match(/volatility\s*(\d+)(\s*\(1s\))?\s*index/);if(m)return `V${m[1]}${m[2]?' (1s)':''}`;
+    m=low.match(/^boom\s*(\d+)/);if(m)return `Boom ${m[1]}`;
+    m=low.match(/^crash\s*(\d+)/);if(m)return `Crash ${m[1]}`;
+    m=low.match(/^jump\s*(\d+)/);if(m)return `Jump ${m[1]}`;
+    const base=s.toUpperCase().replace(/[._\-#!+][A-Z0-9]*$/,'').replace(/^([A-Z]{6})(M|PRO|RAW|ECN|STD)$/,'$1');
+    if(/^(US30|DJ30|WS30|DJI|DOW|USA30)/.test(base))return 'US30';
+    if(/^(XAUUSD|GOLD)/.test(base))return 'XAUUSD';
+    if(/^(BTCUSD|BITCOIN|BTCUSDT)/.test(base))return 'BTCUSD';
+    return base||s.toUpperCase();
+  }
+  function mt5SessionFromUtc(iso,account){
+    if(account?.marketType==='synthetic')return 'Synthétique';
+    const d=new Date(iso);if(!Number.isFinite(d.getTime()))return '';
+    const h=d.getUTCHours();
+    if(h>=0&&h<7)return 'Asie';if(h<12)return 'Londres';if(h<16)return 'Overlap Londres / New York';if(h<21)return 'New York';return 'Hors session';
+  }
+  function mt5ExitReason(code,net){
+    return {TP:'Take Profit',SL:Math.abs(net)<0.01?'Break-even':'Stop Loss',STOP_OUT:'Stop out',MANUAL:'Sortie manuelle avant TP',MOBILE:'Sortie manuelle avant TP',WEB:'Sortie manuelle avant TP',EXPERT:'Sortie automatique (EA)'}[code]||(Math.abs(net)<0.01?'Break-even':'Autre');
+  }
+  function defaultStrategy(){return state.strategies.find(s=>s.active&&!s.archived)||state.strategies.find(s=>!s.archived)||null}
+  function mt5Net(p){const n=Number(p.net);if(Number.isFinite(n))return n;return ['profit','commission','swap','fee'].reduce((s,k)=>s+(Number(p[k])||0),0)}
+
+  // Position MT5 → trade ALTITUDE (clôturé, à compléter)
+  function mt5TradeFromPayload(p,account,login){
+    const net=Number(mt5Net(p).toFixed(2)),entry=Number(p.open_price),initSl=Number(p.initial_sl)>0?Number(p.initial_sl):null;
+    // Risque : 1) valeur exacte calculée par l'EA ; 2) déduite du SL initial (valeur du point = profit brut / mouvement) ; 3) estimation du compte
+    const move=Math.abs(Number(p.close_price)-entry),gross=Math.abs(Number(p.profit)||0),derived=initSl&&move>0&&gross>0?gross/move*Math.abs(entry-initSl):0;
+    const realRisk=Number(p.risk_money)>0?Number(p.risk_money):(derived>0?derived:0),risk=realRisk||Number(accountRiskUSD(account).toFixed(2))||0,rSource=Number(p.risk_money)>0?'ea':derived>0?'derived':'estimated';
+    if(!p.close_reason){const cp=Number(p.close_price),near=(a,b)=>Number(b)>0&&Math.abs(cp-Number(b))<=Math.max(1e-9,Math.abs(cp)*2e-6);p={...p,close_reason:near(cp,p.tp)?'TP':near(cp,p.sl)?'SL':'MANUAL'}}
+    const initTp=Number(p.initial_tp)>0?Number(p.initial_tp):null,dir=String(p.type).toUpperCase()==='SELL'?'SELL':'BUY';
+    const dist=initSl?Math.abs(entry-initSl):0,reward=initTp?(dir==='BUY'?initTp-entry:entry-initTp):0;
+    const r=risk>0?net/risk:(net>0?1:net<0?-1:0),strat=defaultStrategy(),vol=Number(p.volume)||0;
+    const exits=(Array.isArray(p.deals)&&p.deals.length?p.deals:[{time:p.close_time,price:p.close_price,volume:vol,profit:net,reason:p.close_reason}]).map(d=>{const dn=(Number(d.profit)||0)+(Number(d.commission)||0)+(Number(d.swap)||0)+(Number(d.fee)||0);return {at:d.time||p.close_time,price:Number(d.price),percent:vol?Number(((Number(d.volume)||0)/vol*100).toFixed(2)):100,pnl:Number(dn.toFixed(2)),r:risk>0?Number((dn/risk).toFixed(3)):0,reason:mt5ExitReason(d.reason,dn),note:'MT5'}});
+    return {
+      id:uid('trade'),externalId:brokerKey(login,p.position_id),source:'mt5',needsEnrichment:true,importedAt:new Date().toISOString(),
+      mt5:{login:String(login),positionId:String(p.position_id),symbol:p.symbol,volume:vol,server:p.account?.server||'',company:p.account?.company||'',commission:Number(p.commission)||0,swap:Number(p.swap)||0,fee:Number(p.fee)||0,grossProfit:Number(p.profit)||0,closeReason:p.close_reason||'',finalSl:Number(p.sl)||null,finalTp:Number(p.tp)||null},
+      accountId:account.id,accountNameSnapshot:account.name,currencySnapshot:account.currency,
+      strategyId:strat?.id||'',strategySnapshot:strat?{id:strat.id,name:strat.name,description:strat.description,entryRules:[...(strat.entryRules||[])],confirmations:[...(strat.confirmations||[])],riskRules:[...(strat.riskRules||[])],exitRules:[...(strat.exitRules||[])]}:null,
+      asset:mt5NormalizeSymbol(p.symbol),direction:dir,marketContext:'',trendTimeframe:'H1 + M30',entryTimeframe:'M5',timeframe:'M5',session:mt5SessionFromUtc(p.open_time,account),confirmation:'',confidence:0,preTradeEmotion:'',
+      entry,sl:initSl,tp:initTp,initialSl:initSl,initialTp:initTp,riskDistance:dist,plannedRR:dist>0&&reward>0?Number((reward/dist).toFixed(3)):0,
+      riskUSD:Number(risk.toFixed(2)),rEstimated:!realRisk,rSource,riskPct:account.balance>0?Number((risk/account.balance*100).toFixed(3)):0,positionSize:vol,
+      openedAt:p.open_time,closedAt:p.close_time,status:'closed',remainingPct:0,partialExits:exits,realizedPnl:net,pnl:net,resultR:Number(r.toFixed(3)),
+      finalExitReason:mt5ExitReason(p.close_reason,net),quality:'unrated',review:{reviewed:false,lesson:'',mistake:'',emotion:'',updatedAt:null},
+      note:'',capitalBefore:null,capitalAfter:null,modifications:[{at:new Date().toISOString(),type:'Import MT5',note:`Position #${p.position_id} · compte ${login}`}],media:{before:[],after:[]}
+    };
+  }
+
+  // Cherche un trade saisi à la main correspondant (même compte, actif, sens, ouverture ±20 min)
+  function mt5FindManualMatch(accountId,asset,dir,openIso){
+    const t0=new Date(openIso).getTime();if(!Number.isFinite(t0))return null;
+    const norm=x=>mt5NormalizeSymbol(x);
+    return state.trades.filter(t=>!t.externalId&&t.accountId===accountId&&norm(t.asset)===asset&&t.direction===dir&&Math.abs(new Date(t.openedAt).getTime()-t0)<=MT5_MATCH_WINDOW_MIN*60000)
+      .sort((a,b)=>Math.abs(new Date(a.openedAt)-t0)-Math.abs(new Date(b.openedAt)-t0))[0]||null;
+  }
+
+  // rows : [{login, externalId, payload}] · options : {origin:'sync'|'report', since:ISO|null}
+  function importBrokerPositions(rows,{origin='sync',since=null}={}){
+    const res={imported:0,merged:0,linked:0,mismatch:0,skippedHistory:0,unmapped:new Set(),known:0,keys:new Set()};
+    const have=new Set(state.trades.map(t=>t.externalId).filter(Boolean)),ignored=new Set(brokerIgnored());
+    brokerPendingHistory={};
+    for(const row of rows){
+      const p=row.payload||{},login=String(row.login||p.account?.login||''),key=brokerKey(login,row.externalId||p.position_id);
+      if(have.has(key)||ignored.has(key)){res.known++;res.keys.add(key);continue}
+      const link=brokerLinkFor(login),account=link?accountById(link.accountId):null;
+      if(!account){res.unmapped.add(login);continue}
+      const cutoff=origin==='sync'?(link.since||null):since;
+      if(cutoff&&new Date(p.close_time)<new Date(cutoff)){res.skippedHistory++;brokerPendingHistory[login]=(brokerPendingHistory[login]||0)+1;continue}
+      const incoming=mt5TradeFromPayload(p,account,login),match=mt5FindManualMatch(account.id,incoming.asset,incoming.direction,incoming.openedAt);
+      if(match&&match.status==='open'&&!(match.partialExits||[]).length){
+        // Trade ouvert à la main : on le clôture avec les chiffres exacts de MT5 (plan, captures et notes conservés)
+        const risk=Number(match.riskUSD)>0?Number(match.riskUSD):incoming.riskUSD;
+        Object.assign(match,{externalId:key,source:'mt5',mt5:incoming.mt5,status:'closed',remainingPct:0,closedAt:incoming.closedAt,pnl:incoming.pnl,realizedPnl:incoming.pnl,resultR:risk>0?Number((incoming.pnl/risk).toFixed(3)):incoming.resultR,partialExits:incoming.partialExits.map(e=>({...e,r:risk>0?Number((e.pnl/risk).toFixed(3)):e.r})),finalExitReason:incoming.finalExitReason,positionSize:incoming.positionSize});
+        account.balance=Number((Number(account.balance||0)+incoming.pnl).toFixed(2));match.capitalAfter=account.balance;
+        match.modifications=match.modifications||[];match.modifications.push({at:new Date().toISOString(),type:'Clôture MT5',note:`Position #${incoming.mt5.positionId} clôturée automatiquement`});
+        res.merged++;
+      }else if(match&&match.status==='closed'){
+        // Déjà saisi et clôturé à la main : on relie sans toucher au solde, et on signale un éventuel écart
+        match.externalId=key;match.source=match.source||'manual';match.mt5=incoming.mt5;match.mt5Net=incoming.pnl;
+        match.modifications=match.modifications||[];match.modifications.push({at:new Date().toISOString(),type:'Relié à MT5',note:`Position #${incoming.mt5.positionId} · PnL MT5 ${fmtMoney(incoming.pnl,account.currency)}`});
+        res.linked++;if(Math.abs(Number(match.pnl||0)-incoming.pnl)>0.01){match.mt5Mismatch=true;res.mismatch++}
+      }else{
+        incoming.capitalBefore=account.balance;account.balance=Number((Number(account.balance||0)+incoming.pnl).toFixed(2));incoming.capitalAfter=account.balance;
+        state.trades.unshift(incoming);res.imported++;
+      }
+      have.add(key);res.keys.add(key);
+    }
+    return res;
+  }
+  function brokerSummaryText(r){const parts=[];if(r.imported)parts.push(`${r.imported} trade${r.imported>1?'s':''} importé${r.imported>1?'s':''}`);if(r.merged)parts.push(`${r.merged} clôturé${r.merged>1?'s':''} automatiquement`);if(r.linked)parts.push(`${r.linked} relié${r.linked>1?'s':''} à un trade existant`);if(r.mismatch)parts.push(`${r.mismatch} écart${r.mismatch>1?'s':''} de PnL à vérifier`);return parts.join(' · ')}
+
+  // ── Synchronisation cloud ──
+  async function brokerSync({silent=true}={}){
+    if(!currentUser||!supabase||brokerSyncing)return null;brokerSyncing=true;
+    try{
+      const [inbox,accs]=await Promise.all([
+        supabase.from('broker_inbox').select('id,account_login,external_id,payload,imported_at,closed_at').eq('source','mt5').gte('created_at',new Date(Date.now()-180*864e5).toISOString()).order('closed_at',{ascending:true}).limit(3000),
+        supabase.from('broker_accounts').select('*').eq('source','mt5')
+      ]);
+      if(inbox.error)throw inbox.error;if(accs.error)throw accs.error;
+      brokerAccountsCache=accs.data||[];
+      let linksChanged=false;
+      for(const a of brokerAccountsCache){if(brokerLinkFor(a.account_login))continue;const guess=mt5GuessAccountId(a.company,a.server);brokerLinks().push({source:'mt5',login:String(a.account_login),accountId:guess,since:a.first_seen_at||new Date().toISOString(),company:a.company||'',server:a.server||''});linksChanged=true}
+      const rows=(inbox.data||[]).map(r=>({id:r.id,login:r.account_login,externalId:r.external_id,payload:r.payload,imported_at:r.imported_at}));
+      const res=importBrokerPositions(rows,{origin:'sync'});brokerLastSummary=res;
+      const changed=res.imported+res.merged+res.linked>0;
+      if(changed||linksChanged){save();renderAll()}
+      const toMark=rows.filter(r=>!r.imported_at&&res.keys.has(brokerKey(r.login,r.externalId))).map(r=>r.id);
+      if(toMark.length)await supabase.from('broker_inbox').update({imported_at:new Date().toISOString()}).in('id',toMark);
+      if(changed)toast(`MT5 · ${brokerSummaryText(res)}`,'success');
+      brokerLastSync=new Date();brokerSyncError=null;return res;
+    }catch(e){console.warn('[ALTITUDE MT5]',e);brokerSyncError=e?.message||String(e);if(!silent)toast(`Synchronisation MT5 impossible : ${brokerSyncError}`,'error');return null}
+    finally{brokerSyncing=false;if(currentView==='settings')renderSettings()}
+  }
+  function brokerStartPolling(){brokerStopPolling();if(!currentUser||!supabase)return;brokerSync();brokerPollTimer=setInterval(()=>{if(document.visibilityState==='visible')brokerSync()},45000)}
+  function brokerStopPolling(){if(brokerPollTimer)clearInterval(brokerPollTimer);brokerPollTimer=null}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentUser)brokerSync()});
+
+  const v8StartUser=startUser;
+  startUser=async function(user){await v8StartUser(user);brokerStartPolling()};
+  const v8SignOut=signOut;
+  signOut=async function(){brokerStopPolling();brokerAccountsCache=[];brokerTokensCache=[];return v8SignOut()};
+
+  // ── Jetons ──
+  function randomToken(){const b=new Uint8Array(32);crypto.getRandomValues(b);return 'alt_'+btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+  async function sha256Hex(v){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+  async function loadBrokerTokens(){if(!currentUser||!supabase)return;const {data,error}=await supabase.from('sync_tokens').select('id,token_hint,label,created_at,last_used_at,revoked_at').order('created_at',{ascending:false});if(!error)brokerTokensCache=data||[]}
+  async function createBrokerToken(){
+    if(!currentUser||!supabase){toast('Connectez-vous au cloud pour créer un jeton.','error');return}
+    const token=randomToken(),hash=await sha256Hex(token);
+    const {error}=await supabase.from('sync_tokens').insert({user_id:currentUser.id,token_hash:hash,token_hint:token.slice(-4),label:'MetaTrader 5'});
+    if(error){toast(`Création du jeton impossible : ${error.message}`,'error');return}
+    await loadBrokerTokens();renderSettings();
+    showModal(`<div class="modal-head"><div><div class="eyebrow">Connexion MetaTrader 5</div><div class="modal-title">Votre jeton de synchronisation</div><div class="modal-sub">Copiez-le maintenant : pour votre sécurité, il ne sera plus jamais affiché.</div></div><button class="close-btn" data-close-modal>×</button></div>
+      <div class="field"><label>Jeton (paramètre « InpToken » de l'EA)</label><div class="copy-field"><input readonly value="${esc(token)}" id="new-token-value"><button class="btn btn-primary" data-copy="#new-token-value">Copier</button></div></div>
+      <div class="field"><label>URL de synchronisation (paramètre « InpEndpoint »)</label><div class="copy-field"><input readonly value="${esc(MT5_ENDPOINT)}" id="new-token-endpoint"><button class="btn" data-copy="#new-token-endpoint">Copier</button></div></div>
+      <div class="sync-note">Ce jeton permet uniquement d'<b>envoyer</b> des trades vers votre journal. Il ne donne accès ni à votre compte ALTITUDE, ni à votre compte de trading. Vous pouvez le révoquer à tout moment.</div>
+      <div class="modal-footer"><button class="btn btn-primary" data-close-modal>J’ai copié le jeton</button></div>`);
+    bindCopyButtons($('#modal'));
+  }
+  function bindCopyButtons(root=document){$$('[data-copy]',root).forEach(b=>b.onclick=async()=>{const input=$(b.dataset.copy);if(!input)return;try{await navigator.clipboard.writeText(input.value)}catch{input.select();document.execCommand?.('copy')}const old=b.textContent;b.textContent='Copié ✓';setTimeout(()=>b.textContent=old,1600)})}
+
+  // ── Import d'un rapport MT5 (Historique > clic droit > Rapport > HTML) ──
+  async function readReportText(file){
+    const buf=new Uint8Array(await file.arrayBuffer());
+    if(buf[0]===0xFF&&buf[1]===0xFE)return new TextDecoder('utf-16le').decode(buf);
+    if(buf[0]===0xFE&&buf[1]===0xFF)return new TextDecoder('utf-16be').decode(buf);
+    if(buf.length>3&&buf[1]===0&&buf[3]===0)return new TextDecoder('utf-16le').decode(buf);
+    return new TextDecoder('utf-8').decode(buf);
+  }
+  function parseMt5Report(html,offsetHours=0){
+    const doc=new DOMParser().parseFromString(html,'text/html'),out=[];
+    const isTime=v=>/^\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}(:\d{2})?$/.test(v),n=v=>{const x=Number(String(v).replace(/[\s\u00a0]/g,'').replace(',','.'));return Number.isFinite(x)?x:NaN};
+    const toIso=v=>{const [d,t]=v.split(' ');const [Y,M,D]=d.split('.').map(Number);const [h,mi,s=0]=t.split(':').map(Number);return new Date(Date.UTC(Y,M-1,D,h,mi,s)-offsetHours*3600000).toISOString()};
+    const login=(html.match(/(?:Account|Compte|Cuenta|Konto|Conta)\s*:?\s*<\/[^>]+>\s*<[^>]+>\s*(?:<[^>]+>)*\s*(\d{4,})/i)||html.match(/(?:Account|Compte)\s*:?\s*(\d{4,})/i)||[])[1]||'';
+    for(const tr of doc.querySelectorAll('tr')){
+      const c=[...tr.querySelectorAll('td')].filter(td=>!/\bhidden\b/.test(td.className)).map(td=>td.textContent.trim());
+      if(c.length<13||!isTime(c[0])||!/^\d+$/.test(c[1])||!/^(buy|sell)$/i.test(c[3])||!Number.isFinite(n(c[4]))||!isTime(c[8])||!Number.isFinite(n(c[9])))continue;
+      const tail=c.slice(-3).map(n);if(tail.some(x=>!Number.isFinite(x)))continue;
+      const [commission,swap,profit]=tail,open=n(c[5]),sl=n(c[6]),tp=n(c[7]);
+      out.push({position_id:c[1],symbol:c[2],type:c[3].toUpperCase(),volume:n(c[4]),open_time:toIso(c[0]),close_time:toIso(c[8]),open_price:open,close_price:n(c[9]),sl:Number.isFinite(sl)?sl:0,tp:Number.isFinite(tp)?tp:0,initial_sl:Number.isFinite(sl)&&Math.abs(sl-open)>1e-9?sl:0,initial_tp:Number.isFinite(tp)?tp:0,risk_money:0,profit,commission,swap,fee:0,net:Number((profit+commission+swap).toFixed(2)),close_reason:'',deals:[]});
+    }
+    return {login,positions:out};
+  }
+  function openReportImportModal(){
+    const accs=state.accounts;
+    showModal(`<div class="modal-head"><div><div class="eyebrow">Import manuel</div><div class="modal-title">Importer un rapport MT5</div><div class="modal-sub">Dans MetaTrader 5 : onglet Historique → clic droit → Rapport → HTML. Les trades déjà présents sont ignorés.</div></div><button class="close-btn" data-close-modal>×</button></div>
+      <div class="form-grid"><div class="field"><label>Compte ALTITUDE</label><select id="report-account">${accs.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Fuseau du serveur MT5</label><select id="report-offset">${[0,1,2,3,4].map(h=>`<option value="${h}" ${h===3?'selected':''}>GMT+${h}</option>`).join('')}</select><small>Visible dans MT5 (heure de la fenêtre Market Watch). La plupart des brokers sont en GMT+2 / GMT+3.</small></div>
+      <div class="field"><label>Importer à partir du</label><input id="report-since" type="date"><small>Laissez vide pour tout importer. Les trades déjà saisis à la main sont reliés, pas dupliqués.</small></div></div>
+      <label class="draft-dropzone" id="report-drop"><input type="file" id="report-file" accept=".htm,.html,text/html" hidden><div><strong>Choisir ou glisser le rapport HTML</strong><span id="report-file-name">Aucun fichier sélectionné</span></div><span class="btn">Parcourir</span></label>
+      <div id="report-preview"></div>
+      <div class="modal-footer"><button class="btn" data-close-modal>Annuler</button><button class="btn btn-primary" id="report-import" disabled>Importer</button></div>`,true);
+    let parsed=null;
+    const handle=async file=>{if(!file)return;$('#report-file-name').textContent=file.name;const text=await readReportText(file);parsed=parseMt5Report(text,Number($('#report-offset').value));
+      const pnl=parsed.positions.reduce((s,p)=>s+p.net,0);
+      $('#report-preview').innerHTML=parsed.positions.length?`<div class="risk-preview"><div class="risk-box"><span>Positions trouvées</span><strong>${parsed.positions.length}</strong></div><div class="risk-box"><span>Compte MT5</span><strong>${esc(parsed.login||'—')}</strong></div><div class="risk-box"><span>PnL net</span><strong class="${pnl>=0?'up':'down'}">${fmtMoney(pnl)}</strong></div><div class="risk-box"><span>Période</span><strong style="font-size:13px">${fmtDate(parsed.positions[0].close_time)} → ${fmtDate(parsed.positions.at(-1).close_time)}</strong></div></div>`:'<div class="risk-warning">Aucune position clôturée trouvée. Vérifiez qu’il s’agit bien du rapport HTML de l’onglet Historique.</div>';
+      $('#report-import').disabled=!parsed.positions.length};
+    $('#report-file').onchange=e=>handle(e.target.files?.[0]);
+    const drop=$('#report-drop');['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag-over')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag-over')}));drop.addEventListener('drop',e=>handle(e.dataTransfer?.files?.[0]));
+    $('#report-offset').onchange=()=>{const f=$('#report-file').files?.[0];if(f)handle(f)};
+    $('#report-import').onclick=()=>{
+      if(!parsed?.positions.length)return;const accountId=$('#report-account').value,login=parsed.login||`rapport-${accountId}`;
+      let link=brokerLinkFor(login);if(!link){link={source:'mt5',login:String(login),accountId,since:null,company:'',server:''};brokerLinks().push(link)}else link.accountId=accountId;
+      const sinceVal=$('#report-since').value,since=sinceVal?new Date(`${sinceVal}T00:00:00`).toISOString():null;
+      const res=importBrokerPositions(parsed.positions.map(p=>({login,externalId:p.position_id,payload:p})),{origin:'report',since});
+      save();hideModal();renderAll();toast(res.imported+res.merged+res.linked?`Rapport MT5 · ${brokerSummaryText(res)}`:`Aucun nouveau trade (${res.known} déjà présent${res.known>1?'s':''}${res.skippedHistory?`, ${res.skippedHistory} avant la date choisie`:''}).`,'success');
+    };
+  }
+
+  // ── Trades importés à compléter ──
+  function tradesToEnrich(){return state.trades.filter(t=>t.needsEnrichment&&t.status==='closed').sort((a,b)=>new Date(a.closedAt)-new Date(b.closedAt))}
+  function openEnrichModal(id){
+    const queue=tradesToEnrich(),t=id?state.trades.find(x=>x.id===id):queue[0];if(!t){toast('Tous vos trades importés sont complétés.','success');return}
+    const a=accountById(t.accountId),cur=a?.currency||t.currencySnapshot||'USD',pos=queue.findIndex(x=>x.id===t.id);
+    const strategies=state.strategies.filter(s=>!s.archived||s.id===t.strategyId);
+    const opt=(list,val)=>list.map(x=>{const [v,l]=Array.isArray(x)?x:[x,x];return `<option value="${esc(v)}" ${v===val?'selected':''}>${esc(l)}</option>`}).join('');
+    showModal(`<div class="modal-head"><div><div class="eyebrow">Import MT5 · ${pos>=0?`${pos+1} / ${queue.length}`:'trade'}</div><div class="modal-title">${esc(t.asset)} · ${esc(t.direction)} <span class="pill ${t.pnl>0?'success':t.pnl<0?'danger':'warn'}">${fmtMoney(t.pnl,cur)}</span></div><div class="modal-sub">${fmtDateTime(t.openedAt)} → ${fmtDateTime(t.closedAt)} · ${esc(a?.name||'Compte')} · position #${esc(t.mt5?.positionId||'')} · ${esc(t.finalExitReason||'')}</div></div><button class="close-btn" data-close-modal>×</button></div>
+      <div class="enrich-facts"><div><span>Entrée</span><b>${esc(t.entry)}</b></div><div><span>SL initial</span><b>${esc(t.initialSl??'—')}</b></div><div><span>TP initial</span><b>${esc(t.initialTp??'—')}</b></div><div><span>Volume</span><b>${esc(t.positionSize)}</b></div><div><span>Commission + swap</span><b>${fmtMoney((t.mt5?.commission||0)+(t.mt5?.swap||0)+(t.mt5?.fee||0),cur)}</b></div><div><span>Résultat</span><b class="${t.resultR>0?'up':t.resultR<0?'down':''}" id="enrich-r">${fmtR(t.resultR)}</b></div></div>
+      <div class="section-label">Votre analyse</div>
+      <div class="form-grid">
+        <div class="field"><label>Stratégie</label><select id="enrich-strategy">${opt(strategies.map(s=>[s.id,s.name]),t.strategyId)}</select></div>
+        <div class="field"><label>Confirmation</label><select id="enrich-confirmation">${opt([['','À renseigner'],'Avalement / Engulfing','Marteau / Hammer','Doji','Pin bar / rejet','Break & retest','Structure / cassure','Autre'],t.confirmation||'')}</select></div>
+        <div class="field"><label>Contexte</label><select id="enrich-context">${opt([['','Non renseigné'],['bullish','Tendance haussière'],['bearish','Tendance baissière'],['range','Range / neutre']],t.marketContext||'')}</select></div>
+        <div class="field"><label>Session</label><select id="enrich-session">${opt([['','Non renseignée'],'Synthétique','Asie','Londres','New York','Overlap Londres / New York','Hors session'],t.session||'')}</select></div>
+        <div class="field"><label>Qualité d’exécution</label><select id="enrich-quality">${opt([['unrated','Non évalué'],['good','Bon trade · plan respecté'],['bad','Mauvais trade · plan non respecté']],t.quality||'unrated')}</select></div>
+        <div class="field"><label>Risque réel (${esc(cur)}) ${t.rEstimated?'<span class="required">estimé</span>':''}</label><input id="enrich-risk" inputmode="decimal" value="${Number(t.riskUSD||0).toFixed(2)}"><small>${t.rEstimated?'Aucun SL initial transmis : risque estimé depuis le réglage du compte. Corrigez-le pour un R exact.':t.rSource==='derived'?'Déduit du SL initial et du mouvement du prix.':'Calculé par MetaTrader 5 à partir du SL initial.'}</small></div>
+        <div class="field" style="grid-column:1/-1"><label>Plan / observation</label><textarea id="enrich-note" rows="3" placeholder="Zone, tendance MM20, confirmation M5…">${esc(t.note||'')}</textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-danger" id="enrich-ignore">Ignorer ce trade</button><button class="btn" id="enrich-later">Plus tard</button><button class="btn btn-primary" id="enrich-save">${queue.length>1?'Enregistrer et suivant':'Enregistrer'}</button></div>`,true);
+    const riskInput=$('#enrich-risk');riskInput.oninput=()=>{const r=num(riskInput.value);if(r>0){const x=t.pnl/r;$('#enrich-r').textContent=fmtR(x);$('#enrich-r').className=x>0?'up':x<0?'down':''}};
+    $('#enrich-later').onclick=hideModal;
+    $('#enrich-save').onclick=()=>{
+      const s=strategyById($('#enrich-strategy').value),risk=num(riskInput.value);
+      if(s){t.strategyId=s.id;t.strategySnapshot={id:s.id,name:s.name,description:s.description,entryRules:[...(s.entryRules||[])],confirmations:[...(s.confirmations||[])],riskRules:[...(s.riskRules||[])],exitRules:[...(s.exitRules||[])]}}
+      Object.assign(t,{confirmation:$('#enrich-confirmation').value,marketContext:$('#enrich-context').value,session:$('#enrich-session').value,quality:$('#enrich-quality').value,note:$('#enrich-note').value.trim(),needsEnrichment:false});
+      if(Number.isFinite(risk)&&risk>0&&Math.abs(risk-Number(t.riskUSD||0))>0.001){t.riskUSD=Number(risk.toFixed(2));t.rEstimated=false;t.resultR=Number((t.pnl/risk).toFixed(3));(t.partialExits||[]).forEach(e=>e.r=Number((e.pnl/risk).toFixed(3)))}
+      save();renderAll();const next=tradesToEnrich()[0];if(next)openEnrichModal(next.id);else{hideModal();toast('Tous vos trades importés sont complétés.','success')}
+    };
+    $('#enrich-ignore').onclick=()=>confirmDialog({title:'Ignorer ce trade importé ?',text:'Il sera retiré du journal, son PnL sera retiré du solde du compte et il ne sera plus réimporté.',confirmLabel:'Ignorer',danger:true,onConfirm:()=>{const acc=accountById(t.accountId);if(acc)acc.balance=Number((Number(acc.balance||0)-Number(t.pnl||0)).toFixed(2));if(t.externalId&&!brokerIgnored().includes(t.externalId))brokerIgnored().push(t.externalId);state.trades=state.trades.filter(x=>x.id!==t.id);save();renderAll();toast('Trade ignoré.','success');const next=tradesToEnrich()[0];if(next)setTimeout(()=>openEnrichModal(next.id),60)}});
+  }
+  function alignTradeOnMt5(id){
+    const t=state.trades.find(x=>x.id===id);if(!t||!Number.isFinite(Number(t.mt5Net)))return;const acc=accountById(t.accountId),oldPnl=Number(t.pnl||0),net=Number(t.mt5Net);
+    if(acc)acc.balance=Number((Number(acc.balance||0)+net-oldPnl).toFixed(2));
+    const risk=Number(t.riskUSD)||0;t.modifications=t.modifications||[];t.modifications.push({at:new Date().toISOString(),type:'Correction post-clôture',note:'Aligné sur le PnL réel MT5',before:{pnl:oldPnl,resultR:t.resultR},after:{pnl:net,resultR:risk>0?Number((net/risk).toFixed(3)):t.resultR}});
+    t.pnl=net;t.realizedPnl=net;if(risk>0)t.resultR=Number((net/risk).toFixed(3));t.mt5Mismatch=false;save();renderAll();toast('Trade aligné sur MetaTrader 5. Solde et statistiques recalculés.','success');openTradeDetails(id);
+  }
+
+  // ── Affichage : badges dans les tables, bannière Journal, détail ──
+  const v8RenderJournal=renderJournal;
+  renderJournal=function(){
+    v8RenderJournal();const el=$('#view-journal');if(!el)return;const n=tradesToEnrich().length;
+    if(n){const head=$('.page-head',el);head?.insertAdjacentHTML('afterend',`<div class="enrich-banner"><div><span class="eyebrow">Import MetaTrader 5</span><strong>${n} trade${n>1?'s':''} importé${n>1?'s':''} à compléter</strong><small>Ajoutez stratégie et confirmation pour garder des statistiques justes.</small></div><button class="btn btn-primary" id="enrich-start">Compléter maintenant</button></div>`);$('#enrich-start',el).onclick=()=>openEnrichModal()}
+  };
+  const v8OpenTradeDetails=openTradeDetails;
+  openTradeDetails=function(id){
+    v8OpenTradeDetails(id);const t=state.trades.find(x=>x.id===id);if(!t?.externalId)return;
+    const cur=accountById(t.accountId)?.currency||t.currencySnapshot||'USD',m=t.mt5||{},strip=$('#modal .trade-context-strip');
+    strip?.insertAdjacentHTML('afterbegin',`<span class="src-chip">MT5 · #${esc(m.positionId||'')} · ${esc(m.login||'')}</span>`);
+    const footer=$('#modal .modal-footer');
+    if(t.mt5Mismatch)(strip||footer)?.insertAdjacentHTML(strip?'afterend':'beforebegin',`<div class="risk-warning" style="margin:0 0 16px">Écart avec MetaTrader 5 : journal ${fmtMoney(t.pnl,cur)} · MT5 ${fmtMoney(t.mt5Net,cur)}. <button class="btn btn-accent-outline" id="align-mt5" style="margin-left:8px;min-height:34px">Aligner sur MT5</button></div>`);
+    if(t.needsEnrichment)footer?.insertAdjacentHTML('afterbegin','<button class="btn btn-accent-outline" id="enrich-this">Compléter l’import</button>');
+    $('#align-mt5')?.addEventListener('click',()=>alignTradeOnMt5(id));$('#enrich-this')?.addEventListener('click',()=>openEnrichModal(id));
+  };
+
+  // ── Paramètres : section Connexion MetaTrader 5 ──
+  function brokerAccountRow(a){
+    const link=brokerLinkFor(a.account_login),fresh=a.last_seen_at&&Date.now()-new Date(a.last_seen_at).getTime()<10*60000,pending=brokerPendingHistory[a.account_login]||0;
+    return `<div class="mt5-account"><div class="mt5-account-id"><span class="live-dot ${fresh?'on':''}"></span><div><b>${esc(a.company||'Compte MT5')} · ${esc(a.account_login)}</b><small>${esc(a.server||'')} · vu ${a.last_seen_at?fmtDateTime(a.last_seen_at):'—'}</small></div></div><div class="mt5-account-bal"><span>Solde MT5</span><b class="mono">${a.balance!=null?fmtMoney(a.balance,a.currency||'USD'):'—'}</b></div><div class="mt5-account-map"><select data-link-login="${esc(a.account_login)}"><option value="">Associer à un compte…</option>${state.accounts.map(x=>`<option value="${esc(x.id)}" ${link?.accountId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>${pending?`<button class="btn btn-accent-outline" data-history-login="${esc(a.account_login)}">Importer l’historique (${pending})</button>`:''}</div></div>`;
+  }
+  function brokerSettingsSection(){
+    const cloud=Boolean(currentUser&&supabase),tokens=brokerTokensCache.filter(t=>!t.revoked_at),enrich=tradesToEnrich().length;
+    const status=!cloud?'<span class="pill warn">Cloud requis</span>':brokerSyncError?`<span class="pill danger">Erreur</span>`:brokerAccountsCache.some(a=>Date.now()-new Date(a.last_seen_at).getTime()<10*60000)?'<span class="pill success">Connecté</span>':brokerAccountsCache.length?'<span class="pill">En attente de MT5</span>':'<span class="pill">Non configuré</span>';
+    return `<section class="card mt5-card" id="mt5-section"><div class="card-head"><div><div class="eyebrow">Automatisation</div><div class="card-title">Connexion MetaTrader 5 ${status}</div><div class="page-sub">Vos positions clôturées arrivent seules dans le journal. L’EA fourni est en lecture seule : il ne passe aucun ordre.</div></div>${cloud?`<button class="btn" id="mt5-sync-now">${brokerSyncing?'Synchronisation…':'Synchroniser maintenant'}</button>`:''}</div>
+      ${!cloud?'<div class="sync-note">La synchronisation automatique fonctionne avec votre compte cloud ALTITUDE (connexion email). En mode démo, utilisez l’import de rapport ci-dessous.</div>':`
+      <ol class="sync-steps">
+        <li><div><b>Créer un jeton</b><span>${tokens.length?`${tokens.length} jeton${tokens.length>1?'s':''} actif${tokens.length>1?'s':''}`:'Aucun jeton actif'}</span></div><button class="btn btn-primary" id="mt5-new-token">Générer un jeton</button></li>
+        <li><div><b>Installer l’EA dans MT5</b><span>Fichiers → Ouvrir le dossier des données → MQL5 → Experts, puis compilez AltitudeSync.</span></div><a class="btn" href="./mt5/AltitudeSync.mq5" download>Télécharger AltitudeSync.mq5</a></li>
+        <li><div><b>Autoriser l’URL</b><span>Outils → Options → Expert Advisors → « Autoriser WebRequest » → ajoutez l’URL ci-dessous.</span></div><div class="copy-field sm"><input readonly id="mt5-endpoint" value="${esc(MT5_ENDPOINT)}"><button class="btn" data-copy="#mt5-endpoint">Copier</button></div></li>
+        <li><div><b>Glisser l’EA sur un graphique</b><span>Collez le jeton et l’URL dans les paramètres. Un seul graphique par compte suffit.</span></div></li>
+      </ol>
+      ${tokens.length?`<div class="mt5-tokens">${tokens.map(t=>`<div class="mt5-token"><span class="mono">alt_…${esc(t.token_hint||'')}</span><small>créé ${fmtDate(t.created_at)} · ${t.last_used_at?`utilisé ${fmtDateTime(t.last_used_at)}`:'jamais utilisé'}</small><button class="btn btn-danger" data-revoke-token="${esc(t.id)}">Révoquer</button></div>`).join('')}</div>`:''}
+      <div class="section-label">Comptes MT5 détectés</div>
+      ${brokerAccountsCache.length?brokerAccountsCache.map(brokerAccountRow).join(''):'<div class="quiet-empty"><strong>Aucun compte MT5 connecté pour l’instant</strong><span>Il apparaîtra ici quelques secondes après le lancement de l’EA.</span></div>'}
+      <div class="sync-meta">${brokerLastSync?`Dernière vérification ${brokerLastSync.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}`:'Vérification automatique toutes les 45 s'}${brokerSyncError?` · <span class="down">${esc(brokerSyncError)}</span>`:''}${brokerLastSummary?.unmapped?.size?` · <span class="down">${brokerLastSummary.unmapped.size} compte(s) à associer</span>`:''}</div>`}
+      <div class="section-label">Import manuel (secours)</div>
+      <div class="mt5-fallback"><div><b>Rapport MT5 (HTML)</b><span>Pour l’historique ancien ou si l’EA n’est pas lancé. Les doublons sont ignorés.</span></div><button class="btn" id="mt5-import-report">Importer un rapport</button></div>
+      ${enrich?`<div class="mt5-fallback"><div><b>${enrich} trade${enrich>1?'s':''} importé${enrich>1?'s':''} à compléter</b><span>Stratégie, confirmation, contexte et qualité.</span></div><button class="btn btn-primary" id="mt5-enrich">Compléter</button></div>`:''}
+    </section>`;
+  }
+  const v8RenderSettings=renderSettings;
+  renderSettings=function(){
+    v8RenderSettings();const el=$('#view-settings');if(!el)return;
+    const first=$('.settings-sections > .card',el);first?.insertAdjacentHTML('afterend',brokerSettingsSection());
+    bindCopyButtons(el);
+    $('#mt5-new-token',el)?.addEventListener('click',createBrokerToken);
+    $('#mt5-sync-now',el)?.addEventListener('click',()=>brokerSync({silent:false}));
+    $('#mt5-import-report',el)?.addEventListener('click',openReportImportModal);
+    $('#mt5-enrich',el)?.addEventListener('click',()=>openEnrichModal());
+    $$('[data-revoke-token]',el).forEach(b=>b.onclick=()=>confirmDialog({title:'Révoquer ce jeton ?',text:'L’EA qui l’utilise ne pourra plus envoyer de trades. Les trades déjà importés restent dans le journal.',confirmLabel:'Révoquer',danger:true,onConfirm:async()=>{const {error}=await supabase.from('sync_tokens').update({revoked_at:new Date().toISOString()}).eq('id',b.dataset.revokeToken);if(error)toast(error.message,'error');else{await loadBrokerTokens();renderSettings();toast('Jeton révoqué.','success')}}}));
+    $$('[data-link-login]',el).forEach(s=>s.onchange=()=>{const login=s.dataset.linkLogin;let link=brokerLinkFor(login);const acc=brokerAccountsCache.find(a=>String(a.account_login)===String(login));if(!link){link={source:'mt5',login,since:acc?.first_seen_at||new Date().toISOString(),company:acc?.company||'',server:acc?.server||''};brokerLinks().push(link)}link.accountId=s.value;save();toast(s.value?'Compte MT5 associé.':'Association retirée.','success');brokerSync({silent:false})});
+    $$('[data-history-login]',el).forEach(b=>b.onclick=()=>confirmDialog({title:'Importer l’historique de ce compte ?',text:'Les positions plus anciennes seront ajoutées. Celles que vous aviez déjà saisies à la main (même actif, même sens, ouverture à ±20 min) seront reliées au lieu d’être dupliquées.',confirmLabel:'Importer',onConfirm:()=>{const link=brokerLinkFor(b.dataset.historyLogin);if(link){link.since=null;save();brokerSync({silent:false})}}}));
+    if(currentUser&&supabase&&!el.dataset.mt5Loaded){el.dataset.mt5Loaded='1';loadBrokerTokens().then(()=>{if(currentView==='settings')renderSettings()})}
+  };
+
+  // Palette de commandes : accès rapide
+  const v8RenderCommands=renderCommands;
+  renderCommands=function(q=''){
+    v8RenderCommands(q);const results=$('#command-results');if(!results)return;const extra=[['Importer un rapport MT5','MetaTrader 5',()=>{closeCommands();openReportImportModal()}],['Compléter les trades importés','MetaTrader 5',()=>{closeCommands();openEnrichModal()}],['Connexion MetaTrader 5','Paramètres',()=>{closeCommands();setView('settings');setTimeout(()=>$('#mt5-section')?.scrollIntoView({behavior:'smooth'}),60)}]].filter(a=>a[0].toLowerCase().includes(q.toLowerCase()));
+    if(!extra.length)return;$('.empty',results)?.remove();extra.forEach(a=>{const d=document.createElement('div');d.className='command-item';d.innerHTML=`<span>${esc(a[0])}</span><span>${esc(a[1])}</span>`;d.onclick=a[2];results.appendChild(d)});
+  };
 
   function finishLaunch(){setTimeout(()=>$('#launch-screen')?.classList.add('leaving'),1000);setTimeout(()=>{const x=$('#launch-screen');if(x)x.style.display='none'},1500)}
   async function boot(){

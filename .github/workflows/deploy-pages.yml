@@ -1,4 +1,4 @@
-name: Deploy ALTITUDE Trade V8 to GitHub Pages
+name: Deploy ALTITUDE Trade V8.1 to GitHub Pages
 
 on:
   push:
@@ -33,10 +33,11 @@ jobs:
           BILLING_ENABLED: ${{ vars.BILLING_ENABLED }}
         run: |
           rm -rf _site
-          mkdir -p _site/src _site/assets
+          mkdir -p _site/src _site/assets _site/mt5
           cp index.html favicon.svg manifest.webmanifest sw.js CNAME _site/
           cp src/styles.css src/main.js _site/src/
           cp -R assets/. _site/assets/
+          cp mt5/AltitudeSync.mq5 _site/mt5/
           cat > _site/config.js <<CONFIG
           window.ALTITUDE_CONFIG = {
             SUPABASE_URL: '${SUPABASE_URL}',

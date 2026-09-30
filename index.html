@@ -18,7 +18,7 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="preload" as="image" href="./assets/boscofx-trader-bg.webp" />
-  <link rel="stylesheet" href="./src/styles.css?v=8.0.0" />
+  <link rel="stylesheet" href="./src/styles.css?v=8.1.0" />
   <script src="./config.js"></script>
 </head>
 <body>
@@ -148,7 +148,7 @@
     <div class="media-lightbox-stage"><img id="media-lightbox-img" alt="Capture agrandie"></div>
   </div>
 
-  <script type="module" src="./src/main.js?v=8.0.0"></script>
+  <script type="module" src="./src/main.js?v=8.1.0"></script>
   <script>
     const isLocal=['localhost','127.0.0.1'].includes(location.hostname);
     if('serviceWorker' in navigator){
@@ -158,7 +158,7 @@
           await Promise.all(regs.map(r=>r.unregister()));
           if('caches' in window){for(const key of await caches.keys()) await caches.delete(key)}
         }else if(location.protocol==='https:'){
-          navigator.serviceWorker.register('./sw.js?v=8.0.0',{updateViaCache:'none'}).catch(()=>{});
+          navigator.serviceWorker.register('./sw.js?v=8.1.0',{updateViaCache:'none'}).catch(()=>{});
         }
       });
     }
